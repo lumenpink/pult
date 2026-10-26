@@ -4,4 +4,4 @@ pub mod process;
 
 pub use error::RunnerError;
 pub use events::{AgyStreamEvent, ResumeInspection, RunnerOptions};
-pub use process::AgyRunner;
+pub use process::{AgyRunner, RunnerStream};

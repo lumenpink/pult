@@ -66,6 +66,11 @@ fn current_iso_time() -> String {
     )
 }
 
+pub type RunnerStream = (
+    mpsc::Receiver<AgyStreamEvent>,
+    JoinHandle<Result<i32, RunnerError>>,
+);
+
 /// Orquestrador assíncrono para execução do binário da CLI Antigravity (`agy`).
 pub struct AgyRunner {
     options: RunnerOptions,
@@ -90,15 +95,7 @@ impl AgyRunner {
         &self.options
     }
 
-    pub fn spawn(
-        &self,
-    ) -> Result<
-        (
-            mpsc::Receiver<AgyStreamEvent>,
-            JoinHandle<Result<i32, RunnerError>>,
-        ),
-        RunnerError,
-    > {
+    pub fn spawn(&self) -> Result<RunnerStream, RunnerError> {
         let mut cmd = Command::new(&self.options.command);
         cmd.args(&self.options.args);
         cmd.stdout(Stdio::piped());

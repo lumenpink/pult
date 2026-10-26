@@ -16,7 +16,9 @@ pub use domain::{
     SessionMetadata, SessionStorage, TicketRef, Turn, TurnStatus,
 };
 pub use driver::{CccpGitDriver, DriverError, GitStatus, QualityAudit, RepoDriver, TicketDetails};
-pub use runner::{AgyRunner, AgyStreamEvent, ResumeInspection, RunnerError, RunnerOptions};
+pub use runner::{
+    AgyRunner, AgyStreamEvent, ResumeInspection, RunnerError, RunnerOptions, RunnerStream,
+};
 pub use scout::{
     GpuModelInfo, OllamaClient, ScoutEngine, ScoutError, ScoutPromptContext, ScoutResult,
     DEFAULT_OLLAMA_MODEL, DEFAULT_OLLAMA_URL,
