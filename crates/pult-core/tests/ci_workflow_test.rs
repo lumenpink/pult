@@ -8,7 +8,10 @@ fn test_ci_workflow_conforms_to_forgejo_cluster() {
         .unwrap()
         .parent()
         .unwrap();
-    let workflow_path = workspace_root.join(".forgejo").join("workflows").join("ci.yaml");
+    let workflow_path = workspace_root
+        .join(".forgejo")
+        .join("workflows")
+        .join("ci.yaml");
 
     let content = fs::read_to_string(&workflow_path)
         .expect("arquivo .forgejo/workflows/ci.yaml deve existir");
@@ -30,10 +33,22 @@ fn test_ci_workflow_conforms_to_forgejo_cluster() {
     );
 
     // Exige validação de qualidade e compilação
-    assert!(content.contains("cargo check"), "Workflow deve executar cargo check");
-    assert!(content.contains("cargo test"), "Workflow deve executar cargo test");
-    assert!(content.contains("cccp check --strict"), "Workflow deve executar cccp check");
+    assert!(
+        content.contains("cargo check"),
+        "Workflow deve executar cargo check"
+    );
+    assert!(
+        content.contains("cargo test"),
+        "Workflow deve executar cargo test"
+    );
+    assert!(
+        content.contains("cccp check --strict"),
+        "Workflow deve executar cccp check"
+    );
 
     // Exige job de deploy de documentação
-    assert!(content.contains("deploy-site"), "Workflow deve conter job deploy-site");
+    assert!(
+        content.contains("deploy-site"),
+        "Workflow deve conter job deploy-site"
+    );
 }
