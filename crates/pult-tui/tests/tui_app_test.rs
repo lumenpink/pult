@@ -95,3 +95,84 @@ fn test_render_split_viewport_in_test_backend() {
     assert!(content.contains("FASE 5"));
     assert!(content.contains("feat/8-split-viewport-shell"));
 }
+
+#[test]
+fn test_mutation_empty_submission_returns_none() {
+    let mut app = App::new();
+    let key = KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL);
+    let action = handle_key_event(&mut app, key);
+    assert_eq!(action, None);
+    assert!(app.submit_input().is_none());
+}
+
+#[test]
+fn test_mutation_scrolling_boundary_limits() {
+    let mut app = App::new();
+    app.append_viewport_text("L1\nL2\nL3\nL4\nL5");
+    assert_eq!(app.viewport_lines.len(), 5);
+
+    // Subir além do topo não dá underflow
+    app.scroll_up(100);
+    assert_eq!(app.scroll_offset, 0);
+
+    // Rolar para baixo com altura visível 2 -> max_scroll = 5 - 2 = 3
+    app.scroll_down(100, 2);
+    assert_eq!(app.scroll_offset, 3);
+
+    app.scroll_to_bottom(2);
+    assert_eq!(app.scroll_offset, 3);
+
+    app.scroll_to_top();
+    assert_eq!(app.scroll_offset, 0);
+}
+
+#[test]
+fn test_mutation_viewport_navigation_keys() {
+    let mut app = App::new();
+    app.toggle_focus(); // Ativa Focus::Viewport
+    app.append_viewport_text("Linha 1\nLinha 2\nLinha 3\nLinha 4\nLinha 5\nLinha 6");
+
+    let down_key = KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE);
+    assert_eq!(
+        handle_key_event(&mut app, down_key),
+        Some(TuiAction::Scrolled)
+    );
+
+    let pgdn_key = KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE);
+    assert_eq!(
+        handle_key_event(&mut app, pgdn_key),
+        Some(TuiAction::Scrolled)
+    );
+
+    let up_key = KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE);
+    assert_eq!(
+        handle_key_event(&mut app, up_key),
+        Some(TuiAction::Scrolled)
+    );
+
+    let end_key = KeyEvent::new(KeyCode::End, KeyModifiers::NONE);
+    assert_eq!(
+        handle_key_event(&mut app, end_key),
+        Some(TuiAction::Scrolled)
+    );
+
+    let home_key = KeyEvent::new(KeyCode::Home, KeyModifiers::NONE);
+    assert_eq!(
+        handle_key_event(&mut app, home_key),
+        Some(TuiAction::Scrolled)
+    );
+    assert_eq!(app.scroll_offset, 0);
+}
+
+#[test]
+fn test_mutation_render_small_screen_geometry() {
+    let backend = TestBackend::new(25, 10);
+    let mut terminal = Terminal::new(backend).expect("terminal");
+    let app = App::new();
+
+    terminal
+        .draw(|f| {
+            render(&app, f);
+        })
+        .expect("deve renderizar em terminal pequeno sem panic");
+}
