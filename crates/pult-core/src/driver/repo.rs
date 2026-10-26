@@ -147,7 +147,7 @@ impl RepoDriver for CccpGitDriver {
     fn check_strict(&self) -> Result<QualityAudit, DriverError> {
         let output = Command::new("cccp")
             .current_dir(&self.workspace_root)
-            .args(&["check", "--strict"])
+            .args(["check", "--strict"])
             .output()?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
