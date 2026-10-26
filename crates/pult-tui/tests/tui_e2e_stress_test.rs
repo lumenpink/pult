@@ -61,3 +61,30 @@ fn test_e2e_viewport_5000_lines_scroll_stress() {
     // Editor não deve sofrer qualquer mutação acidental
     assert!(app.textarea.lines()[0].is_empty());
 }
+
+#[test]
+fn test_mutation_viewport_extreme_scroll_bounds() {
+    let mut app = App::new();
+    for i in 0..100 {
+        app.append_viewport_line(&format!("Linha {}", i));
+    }
+
+    // Rolagem para baixo além do limite (com 20 linhas visíveis, máx é 80)
+    app.scroll_down(500, 20);
+    assert_eq!(app.scroll_offset, 80);
+
+    // Rolagem para cima além do limite
+    app.scroll_up(500);
+    assert_eq!(app.scroll_offset, 0);
+
+    // Viewport vazio não deve entrar em pânico
+    let mut empty_app = App::new();
+    empty_app.scroll_down(10, 20);
+    assert_eq!(empty_app.scroll_offset, 0);
+    empty_app.scroll_up(10);
+    assert_eq!(empty_app.scroll_offset, 0);
+    empty_app.scroll_to_bottom(30);
+    assert_eq!(empty_app.scroll_offset, 0);
+    empty_app.scroll_to_top();
+    assert_eq!(empty_app.scroll_offset, 0);
+}
