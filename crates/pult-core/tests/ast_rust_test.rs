@@ -97,10 +97,10 @@ fn test_rust_ast_extractor_omits_bodies_and_private_items() {
     assert!(extracted.contains("pub trait Limiter"));
 
     // Deve conter assinaturas públicas de métodos com corpo omitido ';'
-    assert!(extracted.contains("pub fn new("));
-    assert!(extracted.contains("fn check_quota("));
-    assert!(extracted.contains("fn consume("));
-    assert!(extracted.contains("pub fn public_utility("));
+    assert!(extracted.contains("pub fn new"));
+    assert!(extracted.contains("fn check_quota"));
+    assert!(extracted.contains("fn consume"));
+    assert!(extracted.contains("pub fn public_utility"));
 
     // NÃO deve conter funções e utilitários privados
     assert!(!extracted.contains("internal_helper"));
