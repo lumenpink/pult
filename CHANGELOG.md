@@ -19,3 +19,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `crates/pult-core`: Cliente assíncrono para Ollama local e motor Scout para filtragem cirúrgica de AST com telemetria de VRAM e suporte a bypass (#6).
 - `crates/pult-core`: Orquestrador assíncrono para a CLI Antigravity com streaming via canais MPSC, persistência incremental e detecção de truncamento (#7).
 - `crates/pult-tui`: Interface TUI desacoplada com split viewport superior, editor multilinha inferior com tui-textarea e alternância de foco (#8).
+- `crates/pult-tui`: Máquina de estados GOST DD-TDD interativa, atalhos contextuais (Ctrl+P, Ctrl+N, Ctrl+G, Ctrl+M), guarda estrita da Fase 3 e compilação de crônica de fechamento (#9).
