@@ -15,3 +15,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `crates/pult-core`: Driver soberano CCCP e Git com guardas de fase GOST, formatação canônica de commits (<= 72 chars) e injeção da fase ativa (#3).
 - `crates/pult-core`: Extrator estrutural de AST de Rust via `syn` e `quote` omitindo corpos de funções funcionais e filtrando itens privados (#4).
 - CI: Configuração canônica do workflow Forgejo com runner `ubuntu-latest` e container soberano `gost-ci-cross:latest` (#11).
+- `crates/pult-core`: Extrator de AST poliglota com Tree-Sitter (TypeScript, JavaScript, Python, PHP, Bash) e despacho para Rust (#5).
