@@ -339,13 +339,17 @@ fn sanitize_slug(slug: &str) -> String {
             }
         })
         .collect();
-    let trimmed = s.trim_matches('-');
-    if trimmed.len() > 60 {
-        trimmed[..60].trim_matches('-').to_string()
-    } else if trimmed.is_empty() {
+
+    // Colapsa múltiplos traços consecutivos e apara extremidades
+    let parts: Vec<&str> = s.split('-').filter(|p| !p.is_empty()).collect();
+    let collapsed = parts.join("-");
+
+    if collapsed.len() > 60 {
+        collapsed[..60].trim_matches('-').to_string()
+    } else if collapsed.is_empty() {
         "sessao".to_string()
     } else {
-        trimmed.to_string()
+        collapsed
     }
 }
 
