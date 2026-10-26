@@ -127,8 +127,8 @@ impl RepoDriver for CccpGitDriver {
             if trimmed.is_empty() {
                 continue;
             }
-            if trimmed.starts_with("??") {
-                untracked_files.push(trimmed[2..].trim().to_string());
+            if let Some(stripped) = trimmed.strip_prefix("??") {
+                untracked_files.push(stripped.trim().to_string());
             } else if trimmed.len() >= 3 {
                 modified_files.push(trimmed[3..].trim().to_string());
             }
