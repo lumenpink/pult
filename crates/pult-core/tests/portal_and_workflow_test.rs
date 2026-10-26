@@ -100,3 +100,41 @@ fn test_ci_workflow_multiarch_and_banca_publish() {
         "Deve atualizar o manifesto pult na Banca"
     );
 }
+
+#[test]
+fn test_mutation_site_headers_and_wrangler_consistency() {
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let repo_root = manifest_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .unwrap_or(manifest_dir);
+
+    let headers_path = repo_root.join("site/_headers");
+    let headers = fs::read_to_string(&headers_path).expect("ler site/_headers");
+    assert!(headers.contains("X-Content-Type-Options: nosniff"));
+    assert!(headers.contains("X-Frame-Options: DENY"));
+    assert!(headers.contains("Referrer-Policy: strict-origin-when-cross-origin"));
+
+    let wrangler_path = repo_root.join("wrangler.jsonc");
+    let wrangler = fs::read_to_string(&wrangler_path).expect("ler wrangler.jsonc");
+    assert!(wrangler.contains("pult.2lp.in"));
+    assert!(wrangler.contains("./site"));
+}
+
+#[test]
+fn test_mutation_install_script_contains_fallback() {
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let repo_root = manifest_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .unwrap_or(manifest_dir);
+
+    let install_sh = repo_root.join("install.sh");
+    let script = fs::read_to_string(&install_sh).expect("ler install.sh");
+
+    assert!(script.contains("linux-amd64"));
+    assert!(script.contains("linux-arm64"));
+    assert!(script.contains("cargo install --git"));
+    assert!(script.contains("cargo build --release -p pult-tui"));
+    assert!(script.contains("bucket.2lp.in/downloads/pult"));
+}
