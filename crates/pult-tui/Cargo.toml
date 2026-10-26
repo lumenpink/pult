@@ -5,6 +5,10 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 description = "Terminal user interface for Pult using Ratatui and Crossterm"
 
+[lib]
+name = "pult_tui"
+path = "src/lib.rs"
+
 [[bin]]
 name = "pult"
 path = "src/main.rs"
