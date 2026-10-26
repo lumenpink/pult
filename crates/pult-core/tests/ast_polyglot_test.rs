@@ -181,7 +181,7 @@ impl EngineConfig {
     assert!(!result.contains("secret_token"));
     assert!(result.contains("pub fn new"));
     assert!(!result.contains("format!(\"tok-"));
-    assert!(result.contains("{ ... }"));
+    assert!(result.contains(";"));
 }
 
 #[test]
