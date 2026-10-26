@@ -134,3 +134,78 @@ fn test_file_session_storage_roundtrip() {
     assert_eq!(all.len(), 1);
     assert_eq!(all[0].session_id, session.metadata.session_id);
 }
+
+#[test]
+fn test_mutation_turn_statuses_and_context_filter() {
+    let mut session = Session::new_formal(99, "mutation-guard", "feat/99-guard");
+    session.metadata.context_filter = Some(ContextFilter {
+        scout_model: "qwen2.5-coder:3b".to_string(),
+        filtered_symbols: vec!["crate::domain::Session".to_string()],
+    });
+
+    session.turns.push(Turn {
+        turn_number: 1,
+        actor: Actor::Scout,
+        timestamp: "2026-10-26T12:00:00Z".to_string(),
+        content: "<!-- INJECTED_AST -->".to_string(),
+        status: TurnStatus::InProgress,
+        tokens: Some(120),
+        tokens_out: Some(40),
+    });
+
+    session.turns.push(Turn {
+        turn_number: 2,
+        actor: Actor::Agy,
+        timestamp: "2026-10-26T12:00:10Z".to_string(),
+        content: "Resposta parcial interrompida por cota".to_string(),
+        status: TurnStatus::Truncated,
+        tokens: None,
+        tokens_out: Some(8192),
+    });
+
+    let md = session
+        .to_markdown()
+        .expect("deve serializar com status não-default");
+    assert!(md.contains("STATUS: in_progress"));
+    assert!(md.contains("STATUS: truncated"));
+    assert!(md.contains("qwen2.5-coder:3b"));
+    assert!(md.contains("crate::domain::Session"));
+
+    let parsed = Session::from_markdown(&md).expect("deve desserializar");
+    assert_eq!(parsed.turns.len(), 2);
+    assert_eq!(parsed.turns[0].status, TurnStatus::InProgress);
+    assert_eq!(parsed.turns[1].status, TurnStatus::Truncated);
+    assert!(parsed.metadata.context_filter.is_some());
+    assert_eq!(
+        parsed.metadata.context_filter.unwrap().scout_model,
+        "qwen2.5-coder:3b"
+    );
+}
+
+#[test]
+fn test_mutation_invalid_gost_phase_numbers() {
+    assert!(GostPhase::from_u8(0).is_err());
+    assert!(GostPhase::from_u8(10).is_err());
+    assert!(GostPhase::from_u8(255).is_err());
+}
+
+#[test]
+fn test_mutation_malformed_markdown_handling() {
+    let result = Session::from_markdown("# Arquivo sem frontmatter");
+    assert!(result.is_err());
+
+    let result2 = Session::from_markdown("---\nsem fechamento de frontmatter");
+    assert!(result2.is_err());
+}
+
+#[test]
+fn test_mutation_storage_not_found() {
+    let temp_dir = tempdir().expect("pasta temporária");
+    let storage = FileSessionStorage::new(temp_dir.path());
+    let result = storage.load("sessao_inexistente");
+    assert!(result.is_err());
+    match result {
+        Err(SessionError::NotFound(id)) => assert_eq!(id, "sessao_inexistente"),
+        other => panic!("esperava SessionError::NotFound, obteve {:?}", other),
+    }
+}
