@@ -1,3 +1,8 @@
+//! Testes de estresse e desempenho da interface de terminal (TUI).
+//!
+//! Valida a integridade do viewport desacoplado em cargas pesadas (5.000 linhas)
+//! garantindo taxas de renderização inferiores a 50ms e imunidade a mutações no editor.
+
 use pult_tui::app::App;
 use pult_tui::ui::render;
 use ratatui::backend::TestBackend;

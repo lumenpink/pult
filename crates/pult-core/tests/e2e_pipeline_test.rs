@@ -1,3 +1,9 @@
+//! Testes de integração de ponta a ponta (E2E) para o Pult.
+//!
+//! Valida a orquestração de todo o fluxo operacional: extração de AST poliglota,
+//! filtragem de contexto pelo Scout Engine, persistência incremental e streaming
+//! via AgyRunner, além dos artefatos de implantação Cloudflare Pages.
+
 use pult_core::ast::{AstExtractor, PolyglotAstExtractor};
 use pult_core::domain::{
     Actor, FileSessionStorage, GostPhase, Session, SessionStorage, Turn, TurnStatus,
