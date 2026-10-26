@@ -2,8 +2,13 @@
 //! e guardião normativo do ciclo GOST DD-TDD para o PULT.
 
 pub mod domain;
+pub mod driver;
 
-pub use domain::*;
+pub use domain::{
+    Actor, ContextFilter, FileSessionStorage, GostMetadata, GostPhase, Session, SessionError,
+    SessionMetadata, SessionStorage, TicketRef, Turn, TurnStatus,
+};
+pub use driver::{CccpGitDriver, DriverError, GitStatus, QualityAudit, RepoDriver, TicketDetails};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
