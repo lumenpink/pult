@@ -77,7 +77,8 @@ fn test_compile_closing_chronicle() {
     app.append_viewport_line("<!-- TURN: 2 | ACTOR: agy -->");
     app.append_viewport_line("Contratos e atalhos implementados com sucesso.");
 
-    let chronicle = app.compile_closing_chronicle("tui", "implement gost state guard and shortcuts");
+    let chronicle =
+        app.compile_closing_chronicle("tui", "implement gost state guard and shortcuts");
 
     // Header deve seguir o padrão canônico (<= 72 chars)
     let first_line = chronicle.lines().next().unwrap();

@@ -69,8 +69,7 @@ impl App {
         if current_num >= 9 {
             return Err("Já se encontra na última fase do GOST (Fase 9: Close Ticket)");
         }
-        let next =
-            GostPhase::from_u8(current_num + 1).map_err(|_| "Fase GOST inválida")?;
+        let next = GostPhase::from_u8(current_num + 1).map_err(|_| "Fase GOST inválida")?;
         self.gost_phase = next;
         Ok(next)
     }
@@ -89,9 +88,8 @@ impl App {
         }
 
         for &file in modified_files {
-            let is_doc = file.starts_with("docs/")
-                || file.ends_with(".md")
-                || file.starts_with(".gost/");
+            let is_doc =
+                file.starts_with("docs/") || file.ends_with(".md") || file.starts_with(".gost/");
             if !is_doc && (file.starts_with("src/") || file.contains("/src/")) {
                 return Err(format!(
                     "☭ Veto Fase 3: Modificação em código de produção proibida na fase de contratos! Arquivo violador: {}",

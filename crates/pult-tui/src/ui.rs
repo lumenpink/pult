@@ -125,7 +125,9 @@ fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
         pult_core::domain::GostPhase::SpecContract => {
             spans.push(Span::styled(
                 "[Ctrl+P: Aprovar Spec]  ",
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
             ));
         }
         pult_core::domain::GostPhase::CloseTicket => {
@@ -148,7 +150,10 @@ fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
         }
     }
 
-    spans.push(Span::styled("[Ctrl+Q: Sair]", Style::default().fg(Color::Red)));
+    spans.push(Span::styled(
+        "[Ctrl+Q: Sair]",
+        Style::default().fg(Color::Red),
+    ));
 
     let paragraph = Paragraph::new(Line::from(spans));
     frame.render_widget(paragraph, area);
