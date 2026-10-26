@@ -21,3 +21,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `crates/pult-tui`: Interface TUI desacoplada com split viewport superior, editor multilinha inferior com tui-textarea e alternância de foco (#8).
 - `crates/pult-tui`: Máquina de estados GOST DD-TDD interativa, atalhos contextuais (Ctrl+P, Ctrl+N, Ctrl+G, Ctrl+M), guarda estrita da Fase 3 e compilação de crônica de fechamento (#9).
 - Suíte completa de testes de integração de ponta a ponta (E2E), teste de estresse do viewport com 5.000 linhas, clippy com zero avisos e auditoria estrita de qualidade (#10).
+- Portal oficial pult.2lp.in com identidade anti-design/construtivista, instalador curl portátil e esteira multi-arquitetura com publicação na Banca e Cloudflare R2 (#12).
