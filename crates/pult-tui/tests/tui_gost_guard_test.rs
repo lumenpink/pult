@@ -109,4 +109,59 @@ fn test_render_footer_contextual_action_buttons() {
     terminal.draw(|f| render(&app, f)).unwrap();
     let content_p9 = format!("{:?}", terminal.backend().buffer());
     assert!(content_p9.contains("Ctrl+G: Fechar"));
+    assert!(content_p9.contains("Ctrl+M: Merge CCCP"));
+}
+
+#[test]
+fn test_mutation_phase3_guard_inactive_in_other_phases() {
+    let mut app = App::new();
+    app.set_gost_phase(GostPhase::GreenCode);
+
+    // Na Fase 5, alterações em src/ são legítimas e esperadas
+    let src_diff = &["src/main.rs", "crates/pult-core/src/lib.rs"];
+    assert!(app.check_phase3_guard(src_diff).is_ok());
+}
+
+#[test]
+fn test_mutation_chronicle_draft_session_without_ticket() {
+    let mut app = App::new();
+    app.set_ticket_info(None, "draft-branch", 9);
+    let chronicle = app.compile_closing_chronicle("core", "draft session finish");
+
+    assert!(chronicle.starts_with("docs(core): draft session finish\n"));
+    assert!(!chronicle.contains("closes #"));
+}
+
+#[test]
+fn test_mutation_ctrl_n_advances_phase_and_logs() {
+    let mut app = App::new();
+    assert_eq!(app.phase(), GostPhase::Ticket);
+
+    let key_ctrl_n = KeyEvent::new(KeyCode::Char('n'), KeyModifiers::CONTROL);
+    let action = handle_key_event(&mut app, key_ctrl_n);
+
+    assert_eq!(action, Some(TuiAction::PhaseAdvanced(GostPhase::NewBranch)));
+    assert_eq!(app.phase(), GostPhase::NewBranch);
+    assert!(app
+        .viewport_lines
+        .last()
+        .unwrap()
+        .contains("Avanço para FASE 2"));
+}
+
+#[test]
+fn test_mutation_ctrl_g_and_ctrl_m_actions() {
+    let mut app = App::new();
+
+    let key_ctrl_g = KeyEvent::new(KeyCode::Char('g'), KeyModifiers::CONTROL);
+    assert_eq!(
+        handle_key_event(&mut app, key_ctrl_g),
+        Some(TuiAction::FinishTriggered)
+    );
+
+    let key_ctrl_m = KeyEvent::new(KeyCode::Char('m'), KeyModifiers::CONTROL);
+    assert_eq!(
+        handle_key_event(&mut app, key_ctrl_m),
+        Some(TuiAction::MergeTriggered)
+    );
 }
