@@ -1,9 +1,11 @@
 //! `pult-core` — Motor de domínio, extratores de AST, cliente Scout (Ollama)
 //! e guardião normativo do ciclo GOST DD-TDD para o PULT.
 
+pub mod ast;
 pub mod domain;
 pub mod driver;
 
+pub use ast::{AstError, AstExtractor, ExtractedAstFile, RustAstExtractor};
 pub use domain::{
     Actor, ContextFilter, FileSessionStorage, GostMetadata, GostPhase, Session, SessionError,
     SessionMetadata, SessionStorage, TicketRef, Turn, TurnStatus,
