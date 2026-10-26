@@ -1,4 +1,9 @@
 //! Testes de integridade do portal web pult.2lp.in e do workflow de release para a Banca.
+//!
+//! Valida a aderência do portal com as diretrizes do ecossistema, incluindo
+//! a folha de estilo anti-design, simulador interativo da TUI, comandos de instalação,
+//! rodapé canônico, cabeçalhos de segurança e a automação de release multi-arquitetura
+//! do Forgejo com envio para Cloudflare R2 e rotação na Banca.
 
 use std::fs;
 use std::path::Path;
