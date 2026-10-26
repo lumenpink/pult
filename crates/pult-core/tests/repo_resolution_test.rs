@@ -10,7 +10,8 @@ fn test_resolve_current_directory_dot_and_empty() {
     let resolved_dot = resolve_repo_path(".", Some(&base)).expect("failed to resolve '.'");
     assert_eq!(resolved_dot, base);
 
-    let resolved_empty = resolve_repo_path("", Some(&base)).expect("failed to resolve empty string");
+    let resolved_empty =
+        resolve_repo_path("", Some(&base)).expect("failed to resolve empty string");
     assert_eq!(resolved_empty, base);
 }
 
@@ -33,8 +34,8 @@ fn test_resolve_relative_path() {
     fs::create_dir_all(&repo_dir).unwrap();
     let base = temp.path().canonicalize().unwrap();
 
-    let resolved = resolve_repo_path("nested/project", Some(&base))
-        .expect("should resolve relative path");
+    let resolved =
+        resolve_repo_path("nested/project", Some(&base)).expect("should resolve relative path");
     assert_eq!(resolved, repo_dir.canonicalize().unwrap());
 }
 
@@ -85,8 +86,8 @@ fn test_resolve_simple_repo_name_in_base_dir() {
     fs::create_dir_all(&proj_dir).unwrap();
     let canonical_proj = proj_dir.canonicalize().unwrap();
 
-    let resolved = resolve_repo_path("joaju", Some(&base))
-        .expect("should find joaju under base_dir");
+    let resolved =
+        resolve_repo_path("joaju", Some(&base)).expect("should find joaju under base_dir");
     assert_eq!(resolved, canonical_proj);
 }
 

@@ -47,8 +47,8 @@ fn test_cli_flag_alias_dir_and_short_c() {
 
 #[test]
 fn test_cli_precedence_flag_over_positional() {
-    let cli = Cli::try_parse_from(["pult", "-r", "flag_repo", "pos_repo"])
-        .expect("parse flag and pos");
+    let cli =
+        Cli::try_parse_from(["pult", "-r", "flag_repo", "pos_repo"]).expect("parse flag and pos");
     assert_eq!(cli.repo.as_deref(), Some("flag_repo"));
     assert_eq!(cli.repo_pos.as_deref(), Some("pos_repo"));
     // Precedência estrita da flag conforme especificação

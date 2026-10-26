@@ -25,10 +25,7 @@ pub enum RepoError {
 }
 
 /// Resolve o caminho de um repositório a partir de uma entrada textual.
-pub fn resolve_repo_path(
-    input: &str,
-    base_dir: Option<&Path>,
-) -> Result<PathBuf, RepoError> {
+pub fn resolve_repo_path(input: &str, base_dir: Option<&Path>) -> Result<PathBuf, RepoError> {
     resolve_repo_path_with_env(input, base_dir, None)
 }
 
