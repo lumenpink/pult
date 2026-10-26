@@ -17,3 +17,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: Configuração canônica do workflow Forgejo com runner `ubuntu-latest` e container soberano `gost-ci-cross:latest` (#11).
 - `crates/pult-core`: Extrator de AST poliglota com Tree-Sitter (TypeScript, JavaScript, Python, PHP, Bash) e despacho para Rust (#5).
 - `crates/pult-core`: Cliente assíncrono para Ollama local e motor Scout para filtragem cirúrgica de AST com telemetria de VRAM e suporte a bypass (#6).
+- `crates/pult-core`: Orquestrador assíncrono para a CLI Antigravity com streaming via canais MPSC, persistência incremental e detecção de truncamento (#7).
