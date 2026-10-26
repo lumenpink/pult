@@ -60,13 +60,17 @@ fn test_session_markdown_serialization_and_deserialization() {
         turn_number: 1,
         actor: Actor::Agy,
         timestamp: "2026-10-26T10:00:12Z".to_string(),
-        content: "Proposta de contrato em `src/domain/ports.rs`:\n```rust\npub trait RateLimiter {}\n```".to_string(),
+        content:
+            "Proposta de contrato em `src/domain/ports.rs`:\n```rust\npub trait RateLimiter {}\n```"
+                .to_string(),
         status: TurnStatus::Completed,
         tokens: None,
         tokens_out: Some(310),
     });
 
-    let markdown = session.to_markdown().expect("deve serializar para markdown");
+    let markdown = session
+        .to_markdown()
+        .expect("deve serializar para markdown");
     assert!(markdown.starts_with("---\n"));
     assert!(markdown.contains("session_id:"));
     assert!(markdown.contains("id: 42"));
@@ -78,7 +82,10 @@ fn test_session_markdown_serialization_and_deserialization() {
     assert_eq!(parsed.metadata.ticket.as_ref().unwrap().id, 42);
     assert_eq!(parsed.turns.len(), 2);
     assert_eq!(parsed.turns[0].actor, Actor::User);
-    assert_eq!(parsed.turns[0].content, "Precisamos definir o contrato do limitador de requisições.");
+    assert_eq!(
+        parsed.turns[0].content,
+        "Precisamos definir o contrato do limitador de requisições."
+    );
     assert_eq!(parsed.turns[1].actor, Actor::Agy);
 }
 
@@ -109,12 +116,19 @@ fn test_file_session_storage_roundtrip() {
     let path = storage.save(&session).expect("deve salvar arquivo");
     assert!(path.exists());
 
-    let loaded = storage.load(&session.metadata.session_id).expect("deve carregar sessão");
+    let loaded = storage
+        .load(&session.metadata.session_id)
+        .expect("deve carregar sessão");
     assert_eq!(loaded.metadata.session_id, session.metadata.session_id);
 
-    let found = storage.find_by_ticket(101).expect("busca por ticket deve funcionar");
+    let found = storage
+        .find_by_ticket(101)
+        .expect("busca por ticket deve funcionar");
     assert!(found.is_some());
-    assert_eq!(found.unwrap().metadata.session_id, session.metadata.session_id);
+    assert_eq!(
+        found.unwrap().metadata.session_id,
+        session.metadata.session_id
+    );
 
     let all = storage.list().expect("deve listar sessões");
     assert_eq!(all.len(), 1);
