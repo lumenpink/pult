@@ -13,3 +13,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `crates/pult-core`: Parser e serializador canônico de sessões em Markdown com Frontmatter YAML e turnos delimitados por comentários HTML (#2).
 - `crates/pult-core`: Repositório de persistência atômica em disco `FileSessionStorage` com suporte a sessões rascunho (`tXXXXX-...`) e formais (`000042-...`) (#2).
 - `crates/pult-core`: Driver soberano CCCP e Git com guardas de fase GOST, formatação canônica de commits (<= 72 chars) e injeção da fase ativa (#3).
+- `crates/pult-core`: Extrator estrutural de AST de Rust via `syn` e `quote` omitindo corpos de funções funcionais e filtrando itens privados (#4).
