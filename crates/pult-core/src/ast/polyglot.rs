@@ -136,10 +136,12 @@ impl AstExtractor for PolyglotAstExtractor {
         })?;
 
         let mut parser = Parser::new();
-        parser.set_language(&ts_lang).map_err(|e| AstError::ParseError {
-            file: file_path.to_string_lossy().to_string(),
-            message: e.to_string(),
-        })?;
+        parser
+            .set_language(&ts_lang)
+            .map_err(|e| AstError::ParseError {
+                file: file_path.to_string_lossy().to_string(),
+                message: e.to_string(),
+            })?;
 
         let tree = parser
             .parse(content, None)
@@ -152,7 +154,7 @@ impl AstExtractor for PolyglotAstExtractor {
         Self::collect_replacements(tree.root_node(), lang, &mut replacements);
 
         // Ordena em ordem decrescente de início para substituição segura por offset de bytes
-        replacements.sort_by(|a, b| b.0.cmp(&a.0));
+        replacements.sort_by_key(|a| std::cmp::Reverse(a.0));
 
         let mut result = content.to_string();
         for (start, end, rep) in replacements {
@@ -204,7 +206,7 @@ impl AstExtractor for PolyglotAstExtractor {
         for entry in walker {
             let entry = entry.map_err(|e| AstError::Io {
                 path: root.to_path_buf(),
-                source: std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+                source: std::io::Error::other(e.to_string()),
             })?;
 
             if entry.file_type().is_file() {
