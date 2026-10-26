@@ -38,7 +38,9 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
     );
     let phase_span = Span::styled(
         format!(" FASE {} ", app.gost_phase),
-        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
     );
     let branch_span = Span::styled(
         format!(" [{}] {} ", ticket_str, app.branch_name),
@@ -84,7 +86,9 @@ fn render_viewport(app: &App, frame: &mut Frame, area: Rect) {
         .map(|l| Line::from(l.as_str()))
         .collect();
 
-    let paragraph = Paragraph::new(lines).block(block).wrap(Wrap { trim: false });
+    let paragraph = Paragraph::new(lines)
+        .block(block)
+        .wrap(Wrap { trim: false });
     frame.render_widget(paragraph, area);
 }
 

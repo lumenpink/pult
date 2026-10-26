@@ -52,7 +52,10 @@ fn test_editor_submission_with_ctrl_s() {
     let key = KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL);
     let action = handle_key_event(&mut app, key);
 
-    assert_eq!(action, Some(TuiAction::Submit("Prompt para o agente".to_string())));
+    assert_eq!(
+        action,
+        Some(TuiAction::Submit("Prompt para o agente".to_string()))
+    );
     // Textarea deve ser limpo após submissão
     assert!(app.textarea.lines()[0].is_empty());
 }
