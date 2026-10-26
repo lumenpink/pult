@@ -4,13 +4,21 @@
 pub mod ast;
 pub mod domain;
 pub mod driver;
+pub mod scout;
 
-pub use ast::{AstError, AstExtractor, ExtractedAstFile, RustAstExtractor};
+pub use ast::{
+    AstError, AstExtractor, ExtractedAstFile, PolyglotAstExtractor, RustAstExtractor,
+    SupportedLanguage,
+};
 pub use domain::{
     Actor, ContextFilter, FileSessionStorage, GostMetadata, GostPhase, Session, SessionError,
     SessionMetadata, SessionStorage, TicketRef, Turn, TurnStatus,
 };
 pub use driver::{CccpGitDriver, DriverError, GitStatus, QualityAudit, RepoDriver, TicketDetails};
+pub use scout::{
+    GpuModelInfo, OllamaClient, ScoutEngine, ScoutError, ScoutPromptContext, ScoutResult,
+    DEFAULT_OLLAMA_MODEL, DEFAULT_OLLAMA_URL,
+};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
