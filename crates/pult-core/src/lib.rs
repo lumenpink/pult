@@ -4,6 +4,7 @@
 pub mod ast;
 pub mod domain;
 pub mod driver;
+pub mod runner;
 pub mod scout;
 
 pub use ast::{
@@ -15,6 +16,7 @@ pub use domain::{
     SessionMetadata, SessionStorage, TicketRef, Turn, TurnStatus,
 };
 pub use driver::{CccpGitDriver, DriverError, GitStatus, QualityAudit, RepoDriver, TicketDetails};
+pub use runner::{AgyRunner, AgyStreamEvent, ResumeInspection, RunnerError, RunnerOptions};
 pub use scout::{
     GpuModelInfo, OllamaClient, ScoutEngine, ScoutError, ScoutPromptContext, ScoutResult,
     DEFAULT_OLLAMA_MODEL, DEFAULT_OLLAMA_URL,

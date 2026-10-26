@@ -28,7 +28,10 @@ async fn test_runner_streaming_chunks() {
         }
     }
 
-    let status = child_handle.await.expect("join handle");
+    let status = child_handle
+        .await
+        .expect("join handle")
+        .expect("exit code");
     assert_eq!(status, 0);
     assert_eq!(completed_code, Some(0));
     assert!(stdout_acc.contains("primeiro chunk"));
