@@ -135,3 +135,67 @@ fn test_rust_ast_extractor_directory_scanning() {
     assert_eq!(results[0].relative_path, "src/lib.rs");
     assert!(results[0].reduction_ratio() > 40.0);
 }
+
+#[test]
+fn test_mutation_complex_generics_lifetimes_and_async() {
+    let source = r#"
+pub struct AsyncWorker<'a, T: Send + Sync + 'static>
+where
+    T: std::fmt::Debug,
+{
+    pub name: &'a str,
+    pub payload: T,
+}
+
+pub trait JobQueue<'a> {
+    async fn enqueue(&mut self, item: &'a str) -> Result<u64, String>;
+}
+"#;
+
+    let extractor = RustAstExtractor::new();
+    let extracted = extractor
+        .extract_from_str(Path::new("src/worker.rs"), source)
+        .expect("deve processar generics e async");
+
+    assert!(extracted.contains("pub struct AsyncWorker"));
+    assert!(extracted.contains("where T : std :: fmt :: Debug"));
+    assert!(extracted.contains("pub trait JobQueue"));
+    assert!(extracted.contains("async fn enqueue"));
+}
+
+#[test]
+fn test_mutation_parse_error_on_invalid_syntax() {
+    let malformed = "pub struct Broken { incomplete";
+    let extractor = RustAstExtractor::new();
+    let result = extractor.extract_from_str(Path::new("src/broken.rs"), malformed);
+    assert!(result.is_err());
+    match result {
+        Err(AstError::ParseError { file, .. }) => {
+            assert_eq!(file, "src/broken.rs");
+        }
+        other => panic!("esperava ParseError, obteve {:?}", other),
+    }
+}
+
+#[test]
+fn test_mutation_io_error_on_missing_file() {
+    let extractor = RustAstExtractor::new();
+    let result = extractor.extract_from_file(Path::new("/caminho/completamente/inexistente.rs"));
+    assert!(result.is_err());
+    match result {
+        Err(AstError::Io { .. }) => {}
+        other => panic!("esperava AstError::Io, obteve {:?}", other),
+    }
+}
+
+#[test]
+fn test_mutation_reduction_ratio_edge_cases() {
+    let file = ExtractedAstFile {
+        file_path: std::path::PathBuf::from("dummy.rs"),
+        relative_path: "dummy.rs".to_string(),
+        extracted_signatures: "".to_string(),
+        raw_byte_count: 0,
+        reduced_byte_count: 0,
+    };
+    assert_eq!(file.reduction_ratio(), 0.0);
+}
