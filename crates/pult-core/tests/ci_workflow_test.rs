@@ -52,3 +52,31 @@ fn test_ci_workflow_conforms_to_forgejo_cluster() {
         "Workflow deve conter job deploy-site"
     );
 }
+
+#[test]
+fn test_mutation_ci_workflow_branches_and_secrets() {
+    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap();
+    let workflow_path = workspace_root
+        .join(".forgejo")
+        .join("workflows")
+        .join("ci.yaml");
+
+    let content = fs::read_to_string(&workflow_path).unwrap();
+
+    // Valida gatilhos de branches
+    assert!(content.contains("\"main\""));
+    assert!(content.contains("\"feat/*\""));
+    assert!(content.contains("\"fix/*\""));
+
+    // Valida integridade do clone para CCCP
+    assert!(content.contains("fetch-depth: 0"));
+
+    // Valida segredos do Cloudflare para publicação
+    assert!(content.contains("secrets.CLOUDFLARE_API_TOKEN"));
+    assert!(content.contains("secrets.CLOUDFLARE_ACCOUNT_ID"));
+    assert!(content.contains("npx wrangler deploy"));
+}
