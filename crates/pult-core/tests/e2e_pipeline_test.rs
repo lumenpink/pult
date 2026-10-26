@@ -71,7 +71,8 @@ async fn test_e2e_full_workflow_orchestration() {
         command: "sh".to_string(),
         args: vec![
             "-c".to_string(),
-            "echo 'Iniciando testes de integração...'; echo 'Todos os módulos conformes.'".to_string(),
+            "echo 'Iniciando testes de integração...'; echo 'Todos os módulos conformes.'"
+                .to_string(),
         ],
         working_dir: Some(workspace.to_path_buf()),
     });
@@ -84,7 +85,9 @@ async fn test_e2e_full_workflow_orchestration() {
     assert_eq!(final_session.turns.len(), 2);
     assert_eq!(final_session.turns[1].actor, Actor::Agy);
     assert_eq!(final_session.turns[1].status, TurnStatus::Completed);
-    assert!(final_session.turns[1].content.contains("Todos os módulos conformes"));
+    assert!(final_session.turns[1]
+        .content
+        .contains("Todos os módulos conformes"));
 
     // 5. Validação de Carregamento e Reconciliação
     let reloaded = storage

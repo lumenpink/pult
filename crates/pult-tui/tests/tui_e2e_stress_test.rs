@@ -41,11 +41,17 @@ fn test_e2e_viewport_5000_lines_scroll_stress() {
 
     app.scroll_to_top();
     assert_eq!(app.scroll_offset, 0);
-    terminal.draw(|f| render(&app, f)).expect("render retorno topo");
+    terminal
+        .draw(|f| render(&app, f))
+        .expect("render retorno topo");
 
     let duration = start.elapsed();
     // 4 renderizações completas com 5000 linhas devem levar < 50ms
-    assert!(duration.as_millis() < 50, "Tempo de renderização: {:?}", duration);
+    assert!(
+        duration.as_millis() < 50,
+        "Tempo de renderização: {:?}",
+        duration
+    );
 
     // Editor não deve sofrer qualquer mutação acidental
     assert!(app.textarea.lines()[0].is_empty());
