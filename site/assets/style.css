@@ -1,0 +1,389 @@
+/* =============================================================================
+   PULT (Пульт) — Estação de Trabalho TUI Soberana & Mediadora AST
+   Identidade Visual: Construtivismo Soviético, Anti-Design e Era Espacial
+   ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Montserrat:ital,wght@0,400;0,600;0,800;1,400&family=Oswald:wght@500;600;700;900&display=swap');
+
+:root {
+  --c-red: #b81d1d;
+  --c-red-dark: #821010;
+  --c-red-bright: #e63946;
+  --c-cream-bg: #f4eedb;
+  --c-cream-card: #ece3ca;
+  --c-cream-surface: #fbf7ee;
+  --c-gold: #dfa320;
+  --c-gold-dark: #9e6f0b;
+  --c-charcoal: #1a1918;
+  --c-charcoal-light: #2c2a27;
+  --c-term-bg: #121110;
+  --c-term-border: #44403c;
+  --c-cyan: #00d4ff;
+  --c-green: #2ecc71;
+  --c-white: #ffffff;
+
+  --font-display: 'Oswald', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --border-thick: 3px solid var(--c-charcoal);
+  --shadow-retro: 5px 5px 0px var(--c-charcoal);
+  --shadow-retro-gold: 4px 4px 0px var(--c-gold-dark);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--c-cream-bg);
+  background-image: radial-gradient(var(--c-cream-card) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--c-charcoal);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Banner Superior Gosplan */
+.gosplan-topbar {
+  background-color: var(--c-charcoal);
+  color: var(--c-gold);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 0.45rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--c-red);
+}
+
+.gosplan-topbar a {
+  color: var(--c-gold);
+  text-decoration: none;
+}
+.gosplan-topbar a:hover {
+  text-decoration: underline;
+}
+
+/* Container Principal */
+.main-wrapper {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  flex: 1;
+}
+
+/* Hero Section */
+.hero {
+  border: var(--border-thick);
+  background: var(--c-cream-surface);
+  box-shadow: var(--shadow-retro);
+  padding: 2.5rem 2rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.hero-tagline {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--c-red);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6vw, 4.2rem);
+  line-height: 1.05;
+  color: var(--c-charcoal);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+}
+
+.hero-title .cyrillic {
+  color: var(--c-red);
+  font-size: 0.75em;
+}
+
+.hero-desc {
+  font-size: 1.15rem;
+  max-width: 820px;
+  line-height: 1.65;
+  margin-bottom: 1.8rem;
+  font-weight: 500;
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border: 2px solid var(--c-charcoal);
+  background: var(--c-white);
+  box-shadow: 2px 2px 0px var(--c-charcoal);
+}
+.badge-red {
+  background: var(--c-red);
+  color: var(--c-white);
+  border-color: var(--c-red-dark);
+}
+.badge-gold {
+  background: var(--c-gold);
+  color: var(--c-charcoal);
+}
+
+/* Terminal Mockup */
+.terminal-card {
+  border: var(--border-thick);
+  background: var(--c-term-bg);
+  box-shadow: var(--shadow-retro);
+  color: #e0e0e0;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  margin-bottom: 3rem;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.terminal-header {
+  background: #232220;
+  border-bottom: 2px solid var(--c-term-border);
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.terminal-title {
+  color: #aaa;
+  font-weight: 600;
+}
+
+.terminal-status-badge {
+  background: var(--c-red-dark);
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.terminal-viewport {
+  padding: 1.2rem 1.5rem;
+  min-height: 180px;
+  border-bottom: 2px dashed #3a3835;
+  line-height: 1.5;
+  background: #141312;
+}
+
+.terminal-line-scout { color: var(--c-cyan); }
+.terminal-line-turn { color: #88c0d0; }
+.terminal-line-success { color: var(--c-green); }
+.terminal-line-muted { color: #777; }
+
+.terminal-editor-pane {
+  background: #0f0e0d;
+  padding: 1rem 1.5rem;
+  position: relative;
+}
+
+.terminal-editor-prompt {
+  color: var(--c-gold);
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.terminal-editor-input {
+  color: #fff;
+  line-height: 1.4;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--c-cyan);
+}
+
+.terminal-footer-shortcuts {
+  background: #1e1d1b;
+  border-top: 1px solid var(--c-term-border);
+  padding: 0.4rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.76rem;
+  color: #bbb;
+}
+
+.terminal-footer-shortcuts kbd {
+  background: #333;
+  color: var(--c-gold);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-family: inherit;
+}
+
+/* Seção de Instalação Rápida */
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+  border-bottom: 3px solid var(--c-charcoal);
+  padding-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.install-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.install-card {
+  border: var(--border-thick);
+  background: var(--c-cream-surface);
+  box-shadow: 4px 4px 0px var(--c-charcoal);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.install-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+  color: var(--c-charcoal);
+}
+
+.code-box {
+  background: var(--c-charcoal);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.8rem 1rem;
+  margin: 0.8rem 0;
+  border-left: 4px solid var(--c-gold);
+  overflow-x: auto;
+  word-break: break-all;
+}
+
+.banca-btn {
+  display: inline-block;
+  background: var(--c-red);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.6rem 1rem;
+  text-decoration: none;
+  border: 2px solid var(--c-charcoal);
+  box-shadow: 3px 3px 0px var(--c-charcoal);
+  margin-top: auto;
+  text-align: center;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.banca-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--c-charcoal);
+  background: var(--c-red-bright);
+}
+
+/* Grade de Recursos e Arquitetura */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.feature-card {
+  border: var(--border-thick);
+  background: var(--c-cream-surface);
+  box-shadow: 4px 4px 0px var(--c-charcoal);
+  padding: 1.5rem;
+}
+
+.feature-card h4 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  color: var(--c-red-dark);
+}
+
+.feature-card p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Footer Canônico */
+.site-footer {
+  border-top: 3px solid var(--c-charcoal);
+  background: var(--c-cream-surface);
+  padding: 2.5rem 1.5rem;
+  margin-top: auto;
+  text-align: center;
+}
+
+.footer-canonical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-line-identity {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.footer-line-metadata {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.site-footer a {
+  color: var(--c-red);
+  text-decoration: none;
+  font-weight: 600;
+}
+.site-footer a:hover {
+  text-decoration: underline;
+}

@@ -1,18 +1,199 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>pult — Documentação</title>
-<style>
-body { font-family: monospace, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
-h1 { border-bottom: 2px solid #333; padding-bottom: 8px; }
-.badge { display: inline-block; padding: 2px 8px; background: #eee; border: 1px solid #ccc; font-size: 0.9em; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>PULT (Пульт) — Estação de Trabalho TUI Soberana & Mediadora AST</title>
+  <meta name="title" content="PULT (Пульт) — Estação de Trabalho TUI Soberana & Mediadora AST">
+  <meta name="description" content="Estação de trabalho TUI em Rust para desenvolvimento com Antigravity CLI, mediadora de contexto AST poliglota, scout local e guardiã estrita do ciclo GOST DD-TDD.">
+  <meta name="theme-color" content="#b81d1d">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://pult.2lp.in/">
+  <meta property="og:title" content="PULT (Пульт) — Estação de Trabalho TUI Soberana & Mediadora AST">
+  <meta property="og:description" content="Estação de trabalho TUI para terminal em Rust com Antigravity CLI e ciclo GOST DD-TDD.">
+  <meta property="og:site_name" content="Pult">
+
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<h1>pult</h1>
-<p>Estação de trabalho TUI soberana para terminal (Rust), mediadora de contexto AST/Scout e guardiã do ciclo DD-TDD (GOST/CCCP) com a Antigravity CLI.</p>
-<p><span class="badge">GOST v1.1.0</span> <span class="badge">GPL-3.0-or-later</span></p>
+
+  <!-- Barra de Telemetria e Aliança Gosplan -->
+  <header class="gosplan-topbar">
+    <div>☭ GOSPLAN TECHNICAL STANDARD — NORMA GOST 1.1.0</div>
+    <div>
+      <a href="https://banca.2lp.in" target="_blank" rel="noopener">BANCA SOBERANA ➔</a>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+
+    <!-- Seção Hero -->
+    <section class="hero">
+      <div class="hero-tagline">Estação de Trabalho TUI Soberana & Mediadora de Contexto AST</div>
+      <h1 class="hero-title">
+        PULT <span class="cyrillic">(ПУЛЬТ)</span>
+      </h1>
+      <p class="hero-desc">
+        A estação de trabalho definitiva para desenvolvimento assistido por IA no terminal.
+        Projetada em <strong>Rust puro</strong> com arquitetura desacoplada, o Pult atua como o mediador
+        soberano entre a <strong>Antigravity CLI</strong>, o modelo local via <strong>Scout Engine</strong> (Ollama com telemetria VRAM)
+        e a esteira de governança estrita do ciclo <strong>GOST DD-TDD</strong>.
+      </p>
+      <div class="hero-badges">
+        <span class="badge badge-red">RUST 2021</span>
+        <span class="badge badge-gold">GOST DD-TDD (9 FASES)</span>
+        <span class="badge">TREE-SITTER POLIGLOTA</span>
+        <span class="badge">OLLAMA SCOUT</span>
+        <span class="badge">RATATUI + CROSSTERM</span>
+        <span class="badge">GPL-3.0-OR-LATER</span>
+      </div>
+    </section>
+
+    <!-- Simulador Interativo do Terminal Pult -->
+    <section class="terminal-card" aria-label="Terminal Pult Viewport">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="terminal-dot dot-red"></span>
+          <span class="terminal-dot dot-yellow"></span>
+          <span class="terminal-dot dot-green"></span>
+        </div>
+        <div class="terminal-title">pult v0.1.0 — [000010-e2e-quality-gate]</div>
+        <div class="terminal-status-badge">FASE 5: GREEN IMPLEMENT</div>
+      </div>
+
+      <!-- Viewport Superior Desacoplado -->
+      <div class="terminal-viewport">
+        <div class="terminal-line-scout">✦ [SCOUT] 127.0.0.1:11434 online :: VRAM alocada: 5.4 GB / 12.0 GB (45%)</div>
+        <div class="terminal-line-scout">✦ [AST] Extraídos 14 arquivos poliglotas (Rust, TypeScript, Python) :: 124 símbolos indexados</div>
+        <div class="terminal-line-turn">─── TURNO 1 ── [2026-10-26T16:45:00Z] ── lumen (USER) ───</div>
+        <div>Implementar suíte completa de testes de integração e testes de estresse de 5.000 linhas</div>
+        <div class="terminal-line-turn">─── TURNO 2 ── [2026-10-26T16:45:30Z] ── agy (COMPLETED) ───</div>
+        <div class="terminal-line-success">✔ Executando testes: cargo test --test e2e_pipeline_test --test tui_e2e_stress_test</div>
+        <div class="terminal-line-success">✔ 78 testes conformes. Clippy: zero avisos. Qualidade Gosplan: 100%.</div>
+        <div class="terminal-line-muted"><!-- Split Viewport: 5000 linhas de histórico desacopladas da rolagem do editor --></div>
+      </div>
+
+      <!-- Editor Multilinha Inferior com tui-textarea -->
+      <div class="terminal-editor-pane">
+        <div class="terminal-editor-prompt">PULT &gt; EDITOR ATIVO [Ctrl+S para submeter | Ctrl+T alterna foco]</div>
+        <div class="terminal-editor-input">
+          Continuar com a Fase 6 de refatoração garantindo a higiene do clippy e tipagem estrita...
+        </div>
+      </div>
+
+      <!-- Rodapé de Ações Rápidas -->
+      <div class="terminal-footer-shortcuts">
+        <span><kbd>Ctrl+S</kbd> Submeter</span>
+        <span><kbd>Ctrl+T</kbd> Alternar Foco</span>
+        <span><kbd>Ctrl+P</kbd> Aprovar Spec</span>
+        <span><kbd>Ctrl+N</kbd> Avançar Fase</span>
+        <span><kbd>Ctrl+G</kbd> cccp check</span>
+        <span><kbd>Ctrl+M</kbd> Mutantes</span>
+        <span><kbd>Ctrl+Q</kbd> Sair</span>
+      </div>
+    </section>
+
+    <!-- Centro de Instalação e Distribuição -->
+    <h2 class="section-title">⚡ Instalação & Distribuição</h2>
+    <div class="install-grid">
+
+      <!-- Opção 1: Via Curl -->
+      <div class="install-card">
+        <h3>1. Instalação Automática</h3>
+        <p>Instalação via script portátil em um único comando no terminal (Linux/macOS):</p>
+        <div class="code-box">curl -sSL https://pult.2lp.in/install.sh | sh</div>
+        <p style="font-size: 0.85rem; color: #666; margin-top: auto;">
+          Detecta arquitetura e instala em <code>~/.local/bin/pult</code> sem dependências de root.
+        </p>
+      </div>
+
+      <!-- Opção 2: Banca Soberana -->
+      <div class="install-card">
+        <h3>2. Pacotes na Banca</h3>
+        <p>Binários pré-compilados e validados para as principais arquiteturas suportadas:</p>
+        <ul style="font-size: 0.9rem; margin: 0.6rem 0 1.2rem 1.2rem;">
+          <li><strong>Linux x86_64:</strong> <code>tar.gz</code> musl estático</li>
+          <li><strong>Linux ARM64:</strong> <code>tar.gz</code> aarch64 musl</li>
+          <li><strong>Windows x64:</strong> <code>.zip</code> executável portátil</li>
+        </ul>
+        <a class="banca-btn" href="https://banca.2lp.in/downloads/pult/" target="_blank" rel="noopener">
+          Baixar da Banca ➔
+        </a>
+      </div>
+
+      <!-- Opção 3: Via Cargo -->
+      <div class="install-card">
+        <h3>3. Compilação via Cargo</h3>
+        <p>Compilar e instalar diretamente a partir do código-fonte na forja soberana:</p>
+        <div class="code-box">cargo install --git https://gambi.2lp.in/lumen/pult.git pult-tui</div>
+        <p style="font-size: 0.85rem; color: #666; margin-top: auto;">
+          Requer toolchain Rust 1.80+ instalado no ambiente.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Arquitetura e Diferenciais Técnicos -->
+    <h2 class="section-title">🏗️ Arquitetura dos Crates</h2>
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <h4>Extrator AST Poliglota</h4>
+        <p>
+          Utiliza <code>tree-sitter</code> e <code>syn</code> para inspecionar bases em Rust, TypeScript,
+          JavaScript, Python, PHP e Bash, extraindo assinaturas públicas e estruturas enquanto descarta corpos funcionais,
+          reduzindo drasticamente o consumo de tokens.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <h4>Motor Scout Local</h4>
+        <p>
+          Cliente Ollama nativo com monitoramento em tempo real de VRAM via <code>/api/ps</code>.
+          Realiza triagem prévia dos blocos de código relevantes e possui fallback transparente
+          de bypass quando o servidor local está desligado.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <h4>Streaming & Persistência</h4>
+        <p>
+          Orquestração com canais MPSC assíncronos gravando cada turno incrementalmente
+          em disco no formato canônico Markdown em <code>.antigravity/pult/sessions/</code>,
+          com proteção contra encerramento inesperado ou truncamento.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <h4>Guarda Estrita DD-TDD</h4>
+        <p>
+          Máquina de estados interativa baseada no ciclo GOST de 9 fases.
+          Impede fisicamente modificações de código de produção durante a Fase 3 (Spec)
+          e gera crônicas detalhadas no fechamento dos tickets.
+        </p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Rodapé Canônico Oficial -->
+  <footer class="site-footer">
+    <div class="footer-canonical">
+      <div class="footer-line footer-line-identity">
+        Orgulhosamente produzido por uma <a href="https://travesti.2lp.in/pt/" target="_blank" rel="noopener">travesti latina</a> 🏳️‍⚧️ :)
+      </div>
+      <div class="footer-line footer-line-metadata">
+        pult • por <a href="https://lumen.pink" target="_blank" rel="noopener">Lumen Pink</a> • Brasil 🇧🇷 •
+        Forja: <a href="https://gambi.2lp.in/lumen/pult" target="_blank" rel="noopener">Forgejo</a> •
+        Espelhos: <a href="https://github.com/lumenpink/pult" target="_blank" rel="noopener">GitHub</a> &amp;
+        <a href="https://codeberg.org/lumenpink/pult" target="_blank" rel="noopener">Codeberg</a> •
+        Licença: <a href="LICENSE" target="_blank" rel="noopener">GPL-3.0</a>
+      </div>
+    </div>
+  </footer>
+
 </body>
 </html>

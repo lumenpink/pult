@@ -16,7 +16,10 @@ fn test_portal_html_and_assets_integrity() {
 
     // Título e Identidade
     assert!(content.contains("PULT"), "Deve conter menção a PULT");
-    assert!(content.contains("Antigravity"), "Deve mencionar Antigravity");
+    assert!(
+        content.contains("Antigravity"),
+        "Deve mencionar Antigravity"
+    );
     assert!(content.contains("DD-TDD"), "Deve mencionar DD-TDD");
 
     // Instalação e Banca
