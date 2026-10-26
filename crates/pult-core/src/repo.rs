@@ -106,49 +106,23 @@ pub fn resolve_repo_path_with_env(
     if let Some(ref home) = resolved_home {
         let src_root = home.join("src");
 
-        // ~/src/<clean> (ex.: ~/src/acme/widget ou ~/src/pult)
-        let c1 = src_root.join(clean);
-        if c1.exists() {
-            return validate_directory(&c1);
-        }
-
-        // ~/src/<repo_name> (ex.: input lumen/lauda -> ~/src/lauda)
-        if owner.is_some() {
-            let c2 = src_root.join(repo_name);
-            if c2.exists() {
-                return validate_directory(&c2);
-            }
+        if let Some(p) = find_existing_candidate(&src_root, clean, repo_name, owner.is_some()) {
+            return validate_directory(&p);
         }
     }
 
     // Busca no base_dir se fornecido
     if let Some(b) = base_dir {
-        let c3 = b.join(clean);
-        if c3.exists() {
-            return validate_directory(&c3);
-        }
-
-        if owner.is_some() {
-            let c4 = b.join(repo_name);
-            if c4.exists() {
-                return validate_directory(&c4);
-            }
+        if let Some(p) = find_existing_candidate(b, clean, repo_name, owner.is_some()) {
+            return validate_directory(&p);
         }
     }
 
     // Busca no current_dir se base_dir for None
     if base_dir.is_none() {
         if let Ok(cwd) = std::env::current_dir() {
-            let c5 = cwd.join(clean);
-            if c5.exists() {
-                return validate_directory(&c5);
-            }
-
-            if owner.is_some() {
-                let c6 = cwd.join(repo_name);
-                if c6.exists() {
-                    return validate_directory(&c6);
-                }
+            if let Some(p) = find_existing_candidate(&cwd, clean, repo_name, owner.is_some()) {
+                return validate_directory(&p);
             }
         }
     }
@@ -159,6 +133,48 @@ pub fn resolve_repo_path_with_env(
     }
 
     Err(RepoError::NotFound(clean.to_string()))
+}
+
+fn find_existing_candidate(
+    parent: &Path,
+    clean: &str,
+    repo_name: &str,
+    has_owner: bool,
+) -> Option<PathBuf> {
+    let direct = parent.join(clean);
+    if direct.exists() {
+        return Some(direct);
+    }
+
+    if let Some(ci) = find_child_case_insensitive(parent, clean) {
+        return Some(ci);
+    }
+
+    if has_owner {
+        let repo_direct = parent.join(repo_name);
+        if repo_direct.exists() {
+            return Some(repo_direct);
+        }
+
+        if let Some(ci_repo) = find_child_case_insensitive(parent, repo_name) {
+            return Some(ci_repo);
+        }
+    }
+
+    None
+}
+
+fn find_child_case_insensitive(parent: &Path, target_name: &str) -> Option<PathBuf> {
+    if let Ok(entries) = fs::read_dir(parent) {
+        for entry in entries.flatten() {
+            if let Ok(file_name) = entry.file_name().into_string() {
+                if file_name.eq_ignore_ascii_case(target_name) {
+                    return Some(entry.path());
+                }
+            }
+        }
+    }
+    None
 }
 
 fn validate_directory(path: &Path) -> Result<PathBuf, RepoError> {

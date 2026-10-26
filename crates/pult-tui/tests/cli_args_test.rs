@@ -54,3 +54,42 @@ fn test_cli_precedence_flag_over_positional() {
     // Precedência estrita da flag conforme especificação
     assert_eq!(cli.target_repo(), "flag_repo");
 }
+
+#[test]
+fn test_mutation_cli_combination_with_multiple_flags() {
+    let cli = Cli::try_parse_from([
+        "pult",
+        "-r",
+        "my-repo",
+        "-t",
+        "42",
+        "-d",
+        "tarefa em andamento",
+        "-s",
+        "saved_session.md",
+    ])
+    .expect("parse combined flags");
+
+    assert_eq!(cli.repo.as_deref(), Some("my-repo"));
+    assert_eq!(cli.ticket, Some(42));
+    assert_eq!(cli.draft.as_deref(), Some("tarefa em andamento"));
+    assert_eq!(cli.resume.as_deref(), Some("saved_session.md"));
+    assert_eq!(cli.target_repo(), "my-repo");
+}
+
+#[test]
+fn test_mutation_cli_positional_combined_with_ticket() {
+    let cli = Cli::try_parse_from(["pult", "joaju", "--ticket", "99"])
+        .expect("parse positional with ticket");
+
+    assert_eq!(cli.repo, None);
+    assert_eq!(cli.repo_pos.as_deref(), Some("joaju"));
+    assert_eq!(cli.ticket, Some(99));
+    assert_eq!(cli.target_repo(), "joaju");
+}
+
+#[test]
+fn test_mutation_cli_unrecognized_argument_fails() {
+    let res = Cli::try_parse_from(["pult", "--invalid-unknown-option"]);
+    assert!(res.is_err());
+}
