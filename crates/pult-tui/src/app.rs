@@ -19,6 +19,8 @@ pub struct App {
     pub ticket_id: Option<u32>,
     pub branch_name: String,
     pub gost_phase: GostPhase,
+    pub repo_path: std::path::PathBuf,
+    pub repo_name: String,
 }
 
 impl Default for App {
@@ -29,6 +31,16 @@ impl Default for App {
 
 impl App {
     pub fn new() -> Self {
+        let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+        Self::with_repo(cwd)
+    }
+
+    pub fn with_repo(repo_path: std::path::PathBuf) -> Self {
+        let repo_name = repo_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("pult")
+            .to_string();
         let mut textarea = TextArea::default();
         textarea.set_cursor_line_style(ratatui::style::Style::default());
         Self {
@@ -40,6 +52,8 @@ impl App {
             ticket_id: None,
             branch_name: "main".to_string(),
             gost_phase: GostPhase::Ticket,
+            repo_path,
+            repo_name,
         }
     }
 

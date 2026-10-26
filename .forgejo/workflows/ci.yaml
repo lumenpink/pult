@@ -4,11 +4,9 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - main
+    branches: ["main", "feat/*", "fix/*"]
   pull_request:
-    branches:
-      - main
+    branches: ["main"]
   workflow_dispatch:
 
 concurrency:
@@ -29,6 +27,9 @@ jobs:
 
       - name: "Format Check"
         run: cargo fmt --check
+
+      - name: "Cargo Check"
+        run: cargo check
 
       - name: "Clippy Check (Zero Warnings)"
         run: cargo clippy --all-targets -- -D warnings

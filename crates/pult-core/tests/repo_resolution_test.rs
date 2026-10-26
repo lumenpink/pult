@@ -1,4 +1,4 @@
-use pult_core::repo::{resolve_repo_path, RepoError};
+use pult_core::repo::{resolve_repo_path, resolve_repo_path_with_env, RepoError};
 use std::fs;
 use tempfile::tempdir;
 
@@ -46,9 +46,7 @@ fn test_resolve_home_tilde_path() {
     fs::create_dir_all(&proj_dir).unwrap();
     let canonical_proj = proj_dir.canonicalize().unwrap();
 
-    std::env::set_var("HOME", home_dir.to_str().unwrap());
-
-    let resolved = resolve_repo_path("~/src/awesome-app", None)
+    let resolved = resolve_repo_path_with_env("~/src/awesome-app", None, Some(&home_dir))
         .expect("should expand ~ and resolve");
     assert_eq!(resolved, canonical_proj);
 }
@@ -61,9 +59,7 @@ fn test_resolve_owner_slash_repo_in_home_src() {
     fs::create_dir_all(&proj_dir).unwrap();
     let canonical_proj = proj_dir.canonicalize().unwrap();
 
-    std::env::set_var("HOME", home_dir.to_str().unwrap());
-
-    let resolved = resolve_repo_path("lumenpink/my-cool-repo", None)
+    let resolved = resolve_repo_path_with_env("lumenpink/my-cool-repo", None, Some(&home_dir))
         .expect("should find my-cool-repo in ~/src");
     assert_eq!(resolved, canonical_proj);
 }
@@ -76,9 +72,7 @@ fn test_resolve_owner_slash_repo_in_nested_home_src() {
     fs::create_dir_all(&proj_dir).unwrap();
     let canonical_proj = proj_dir.canonicalize().unwrap();
 
-    std::env::set_var("HOME", home_dir.to_str().unwrap());
-
-    let resolved = resolve_repo_path("acme/widget", None)
+    let resolved = resolve_repo_path_with_env("acme/widget", None, Some(&home_dir))
         .expect("should find acme/widget in ~/src");
     assert_eq!(resolved, canonical_proj);
 }

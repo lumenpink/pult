@@ -42,6 +42,12 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
             .fg(Color::Cyan)
             .add_modifier(Modifier::BOLD),
     );
+    let repo_span = Span::styled(
+        format!(" [{}] ", app.repo_name),
+        Style::default()
+            .fg(Color::Magenta)
+            .add_modifier(Modifier::BOLD),
+    );
     let branch_span = Span::styled(
         format!(" [{}] {} ", ticket_str, app.branch_name),
         Style::default().fg(Color::Green),
@@ -51,6 +57,8 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
         title_span,
         Span::raw(" | "),
         phase_span,
+        Span::raw(" | "),
+        repo_span,
         Span::raw(" | "),
         branch_span,
     ]);

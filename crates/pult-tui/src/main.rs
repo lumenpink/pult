@@ -7,47 +7,47 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use pult_tui::app::App;
+use pult_tui::cli::Cli;
 use pult_tui::event::{handle_key_event, TuiAction};
 use pult_tui::ui::render;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use std::io;
+use std::path::PathBuf;
 use std::time::Duration;
-
-#[derive(Parser, Debug)]
-#[command(
-    name = "pult",
-    version = pult_core::VERSION,
-    about = "Estação TUI soberana para terminal"
-)]
-struct Cli {
-    /// ID do ticket formal a ser aberto
-    #[arg(short, long)]
-    ticket: Option<u32>,
-
-    /// Abrir sessão rascunho com descrição
-    #[arg(short, long)]
-    draft: Option<String>,
-
-    /// Retomar sessão existente a partir de arquivo markdown
-    #[arg(short, long)]
-    resume: Option<String>,
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-    run_tui(cli)?;
+    let target = cli.target_repo();
+    let repo_dir = match pult_core::repo::resolve_repo_path(target, None) {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Erro ao resolver repositório '{}': {}", target, err);
+            std::process::exit(1);
+        }
+    };
+
+    if let Err(err) = std::env::set_current_dir(&repo_dir) {
+        eprintln!(
+            "Erro ao definir diretório de trabalho '{}': {}",
+            repo_dir.display(),
+            err
+        );
+        std::process::exit(1);
+    }
+
+    run_tui(cli, repo_dir)?;
     Ok(())
 }
 
-fn run_tui(cli: Cli) -> io::Result<()> {
+fn run_tui(cli: Cli, repo_dir: PathBuf) -> io::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::new();
+    let mut app = App::with_repo(repo_dir);
     if let Some(id) = cli.ticket {
         app.set_ticket_info(Some(id), "feat/active", 1);
     } else if let Some(ref desc) = cli.draft {

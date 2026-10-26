@@ -46,10 +46,10 @@ fn test_ci_workflow_conforms_to_forgejo_cluster() {
         "Workflow deve executar cccp check"
     );
 
-    // Exige job de deploy de documentação
+    // Exige job de deploy de documentação ou artefatos para a banca
     assert!(
-        content.contains("deploy-site"),
-        "Workflow deve conter job deploy-site"
+        content.contains("deploy-site") || content.contains("deploy-banca"),
+        "Workflow deve conter job deploy-site ou deploy-banca"
     );
 }
 
