@@ -252,3 +252,106 @@ fn test_polyglot_directory_scan() {
     assert!(relative_paths.iter().any(|p| p.ends_with("types.ts")));
     assert!(!relative_paths.iter().any(|p| p.contains("node_modules")));
 }
+
+#[test]
+fn test_mutation_unsupported_language_error() {
+    let extractor = PolyglotAstExtractor::new();
+    let result = extractor.extract_from_str(Path::new("data.csv"), "a,b,c\n1,2,3");
+    assert!(result.is_err());
+    match result {
+        Err(pult_core::ast::AstError::UnsupportedLanguage(f)) => {
+            assert_eq!(f, "data.csv");
+        }
+        other => panic!("esperava UnsupportedLanguage, obteve {:?}", other),
+    }
+}
+
+#[test]
+fn test_mutation_empty_content_polyglot() {
+    let extractor = PolyglotAstExtractor::new();
+    for ext in &[
+        "src/mod.rs",
+        "app.py",
+        "index.ts",
+        "test.js",
+        "cli.sh",
+        "index.php",
+    ] {
+        let result = extractor
+            .extract_from_str(Path::new(ext), "")
+            .expect("arquivo vazio deve retornar Ok vazio");
+        assert_eq!(result, "");
+    }
+}
+
+#[test]
+fn test_mutation_multibyte_utf8_handling() {
+    let extractor = PolyglotAstExtractor::new();
+    let py_utf8 = r#"
+# Comentário com acentos: Olá mundo! 🌍🚀
+def saudar_usuária(nome: str) -> str:
+    # Saudações acolhedoras em português
+    mensagem = f"Bem-vinda, {nome}! ✨"
+    return mensagem
+"#;
+    let result = extractor
+        .extract_from_str(Path::new("saudacao.py"), py_utf8)
+        .expect("deve processar UTF-8 sem quebrar limite de caracteres");
+    assert!(result.contains("def saudar_usuária"));
+    assert!(!result.contains("Bem-vinda"));
+}
+
+#[test]
+fn test_mutation_nested_functions_and_closures() {
+    let extractor = PolyglotAstExtractor::new();
+    let ts_nested = r#"
+export function outerService(param: string): void {
+    function innerWorker() {
+        console.log("inner");
+    }
+    innerWorker();
+}
+"#;
+    let result = extractor
+        .extract_from_str(Path::new("nested.ts"), ts_nested)
+        .expect("deve processar funções aninhadas");
+    assert!(result.contains("function outerService"));
+    assert!(!result.contains("console.log"));
+    assert!(result.contains("{ ... }"));
+}
+
+#[test]
+fn test_mutation_tsx_react_component() {
+    let extractor = PolyglotAstExtractor::new();
+    let tsx_code = r#"
+import React from 'react';
+
+export interface ButtonProps {
+    label: string;
+    onClick: () => void;
+}
+
+export function ActionButton({ label, onClick }: ButtonProps): JSX.Element {
+    const [active, setActive] = React.useState(false);
+    return <button onClick={onClick}>{label}</button>;
+}
+"#;
+    let result = extractor
+        .extract_from_str(Path::new("components/Button.tsx"), tsx_code)
+        .expect("deve processar TSX com sucesso");
+    assert!(result.contains("interface ButtonProps"));
+    assert!(result.contains("function ActionButton"));
+    assert!(!result.contains("React.useState"));
+    assert!(result.contains("{ ... }"));
+}
+
+#[test]
+fn test_mutation_io_error_on_missing_file() {
+    let extractor = PolyglotAstExtractor::new();
+    let result = extractor.extract_from_file(Path::new("/caminho/fantasma.py"));
+    assert!(result.is_err());
+    match result {
+        Err(pult_core::ast::AstError::Io { .. }) => {}
+        other => panic!("esperava AstError::Io, obteve {:?}", other),
+    }
+}
