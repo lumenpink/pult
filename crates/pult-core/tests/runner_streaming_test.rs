@@ -154,3 +154,90 @@ async fn test_runner_resume_session() {
     assert!(inspection.branch_matches);
     assert_eq!(inspection.last_turn_status, Some(TurnStatus::Truncated));
 }
+
+#[tokio::test]
+async fn test_mutation_runner_stderr_streaming() {
+    let runner = AgyRunner::with_options(RunnerOptions {
+        command: "sh".to_string(),
+        args: vec![
+            "-c".to_string(),
+            ">&2 echo 'aviso crítico no stderr'; echo 'stdout normal'".to_string(),
+        ],
+        working_dir: None,
+    });
+
+    let (mut rx, handle) = runner.spawn().expect("spawn");
+    let mut stderr_acc = String::new();
+
+    while let Some(event) = rx.recv().await {
+        if let AgyStreamEvent::StderrChunk(err) = event {
+            stderr_acc.push_str(&err);
+        }
+    }
+
+    let _ = handle.await;
+    assert!(stderr_acc.contains("aviso crítico no stderr"));
+}
+
+#[tokio::test]
+async fn test_mutation_runner_nonzero_exit_code() {
+    let temp_dir = tempdir().expect("tempdir");
+    let storage = FileSessionStorage::new(temp_dir.path());
+
+    let mut session = Session::new_draft("Teste de falha de processo");
+    storage.save(&session).expect("salvar");
+
+    let runner = AgyRunner::with_options(RunnerOptions {
+        command: "sh".to_string(),
+        args: vec!["-c".to_string(), "echo 'erro fatal'; exit 42".to_string()],
+        working_dir: None,
+    });
+
+    let final_session = runner
+        .execute_turn_and_persist(&mut session, &storage)
+        .await
+        .expect("deve processar sem panic");
+
+    assert_eq!(final_session.turns.len(), 1);
+    assert_eq!(final_session.turns[0].status, TurnStatus::Interrupted);
+}
+
+#[test]
+fn test_mutation_resume_inspection_branch_mismatch_and_completed() {
+    let temp_dir = tempdir().expect("tempdir");
+    let storage = FileSessionStorage::new(temp_dir.path());
+
+    let mut session = Session::new_formal(99, "doc-auth", "feat/99-doc-auth");
+    session.turns.push(Turn {
+        turn_number: 1,
+        actor: Actor::Agy,
+        timestamp: "2026-10-26T12:00:00Z".to_string(),
+        content: "Turno concluído perfeitamente".to_string(),
+        status: TurnStatus::Completed,
+        tokens: Some(10),
+        tokens_out: Some(20),
+    });
+    storage.save(&session).expect("salvar");
+
+    let session_path = temp_dir
+        .path()
+        .join(format!("{}.md", session.metadata.session_id));
+    let inspection =
+        AgyRunner::inspect_session_for_resume(&session_path, "main").expect("inspecionar sessao");
+
+    assert_eq!(inspection.session_id, session.metadata.session_id);
+    assert!(!inspection.needs_continuation);
+    assert!(!inspection.branch_matches);
+    assert_eq!(inspection.last_turn_status, Some(TurnStatus::Completed));
+}
+
+#[test]
+fn test_mutation_resume_inspection_missing_file() {
+    let non_existent = std::path::PathBuf::from("/caminho/inexistente/sessao.md");
+    let result = AgyRunner::inspect_session_for_resume(&non_existent, "main");
+    assert!(result.is_err());
+    match result {
+        Err(RunnerError::Io { .. }) => {}
+        other => panic!("esperava RunnerError::Io, obteve {:?}", other),
+    }
+}
