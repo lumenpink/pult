@@ -1,5 +1,6 @@
 use crate::app::{App, Focus};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use pult_core::domain::GostPhase;
 use tui_textarea::Input;
 
 /// Ações originadas por interação de teclado na TUI.
@@ -9,6 +10,10 @@ pub enum TuiAction {
     Quit,
     FocusToggled,
     Scrolled,
+    SpecApproved,
+    PhaseAdvanced(GostPhase),
+    FinishTriggered,
+    MergeTriggered,
 }
 
 pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
@@ -27,6 +32,32 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
                     return Some(TuiAction::Submit(content));
                 }
                 return None;
+            }
+            KeyCode::Char('p') => {
+                if app.approve_spec_contract().is_ok() {
+                    app.append_viewport_line(
+                        "★ [GOST] Especificação aprovada via Ctrl+P. Avançando para FASE 4 (Red Test).",
+                    );
+                    return Some(TuiAction::SpecApproved);
+                }
+                return None;
+            }
+            KeyCode::Char('n') => {
+                if let Ok(next) = app.advance_gost_phase() {
+                    app.append_viewport_line(&format!(
+                        "★ [GOST] Avanço para FASE {}: {}.",
+                        next.number(),
+                        next.name()
+                    ));
+                    return Some(TuiAction::PhaseAdvanced(next));
+                }
+                return None;
+            }
+            KeyCode::Char('g') => {
+                return Some(TuiAction::FinishTriggered);
+            }
+            KeyCode::Char('m') => {
+                return Some(TuiAction::MergeTriggered);
             }
             _ => {}
         }

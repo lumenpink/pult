@@ -37,7 +37,7 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
             .add_modifier(Modifier::BOLD),
     );
     let phase_span = Span::styled(
-        format!(" FASE {} ", app.gost_phase),
+        format!(" FASE {} ", app.gost_phase.number()),
         Style::default()
             .fg(Color::Cyan)
             .add_modifier(Modifier::BOLD),
@@ -112,16 +112,44 @@ fn render_editor(app: &App, frame: &mut Frame, area: Rect) {
     frame.render_widget(&textarea, area);
 }
 
-fn render_footer(_app: &App, frame: &mut Frame, area: Rect) {
-    let shortcuts = Line::from(vec![
+fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
+    let mut spans = vec![
         Span::styled("[Ctrl+S: Enviar]  ", Style::default().fg(Color::Green)),
         Span::styled(
             "[Ctrl+T: Alternar Foco]  ",
             Style::default().fg(Color::Yellow),
         ),
-        Span::styled("[Ctrl+Q: Sair]", Style::default().fg(Color::Red)),
-    ]);
+    ];
 
-    let paragraph = Paragraph::new(shortcuts);
+    match app.gost_phase {
+        pult_core::domain::GostPhase::SpecContract => {
+            spans.push(Span::styled(
+                "[Ctrl+P: Aprovar Spec]  ",
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            ));
+        }
+        pult_core::domain::GostPhase::CloseTicket => {
+            spans.push(Span::styled(
+                "[Ctrl+G: Fechar]  ",
+                Style::default()
+                    .fg(Color::LightMagenta)
+                    .add_modifier(Modifier::BOLD),
+            ));
+            spans.push(Span::styled(
+                "[Ctrl+M: Merge CCCP]  ",
+                Style::default().fg(Color::LightGreen),
+            ));
+        }
+        _ => {
+            spans.push(Span::styled(
+                "[Ctrl+N: Próx. Fase]  ",
+                Style::default().fg(Color::Cyan),
+            ));
+        }
+    }
+
+    spans.push(Span::styled("[Ctrl+Q: Sair]", Style::default().fg(Color::Red)));
+
+    let paragraph = Paragraph::new(Line::from(spans));
     frame.render_widget(paragraph, area);
 }

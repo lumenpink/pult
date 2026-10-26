@@ -1,3 +1,4 @@
+use pult_core::domain::GostPhase;
 use tui_textarea::TextArea;
 
 /// Painel que detém o foco ativo do teclado.
@@ -17,7 +18,7 @@ pub struct App {
     pub should_quit: bool,
     pub ticket_id: Option<u32>,
     pub branch_name: String,
-    pub gost_phase: u8,
+    pub gost_phase: GostPhase,
 }
 
 impl Default for App {
@@ -38,14 +39,90 @@ impl App {
             should_quit: false,
             ticket_id: None,
             branch_name: "main".to_string(),
-            gost_phase: 1,
+            gost_phase: GostPhase::Ticket,
         }
     }
 
-    pub fn set_ticket_info(&mut self, ticket_id: Option<u32>, branch_name: &str, gost_phase: u8) {
+    pub fn phase(&self) -> GostPhase {
+        self.gost_phase
+    }
+
+    pub fn set_gost_phase(&mut self, phase: GostPhase) {
+        self.gost_phase = phase;
+    }
+
+    pub fn set_ticket_info(
+        &mut self,
+        ticket_id: Option<u32>,
+        branch_name: &str,
+        gost_phase_num: u8,
+    ) {
         self.ticket_id = ticket_id;
         self.branch_name = branch_name.to_string();
-        self.gost_phase = gost_phase;
+        if let Ok(p) = GostPhase::from_u8(gost_phase_num) {
+            self.gost_phase = p;
+        }
+    }
+
+    pub fn advance_gost_phase(&mut self) -> Result<GostPhase, &'static str> {
+        let current_num = self.gost_phase.number();
+        if current_num >= 9 {
+            return Err("Já se encontra na última fase do GOST (Fase 9: Close Ticket)");
+        }
+        let next =
+            GostPhase::from_u8(current_num + 1).map_err(|_| "Fase GOST inválida")?;
+        self.gost_phase = next;
+        Ok(next)
+    }
+
+    pub fn approve_spec_contract(&mut self) -> Result<GostPhase, &'static str> {
+        if self.gost_phase != GostPhase::SpecContract {
+            return Err("Apenas a Fase 3 (Doc / Spec Contract) pode ser aprovada para Red Test");
+        }
+        self.gost_phase = GostPhase::RedTest;
+        Ok(GostPhase::RedTest)
+    }
+
+    pub fn check_phase3_guard(&self, modified_files: &[&str]) -> Result<(), String> {
+        if self.gost_phase != GostPhase::SpecContract {
+            return Ok(());
+        }
+
+        for &file in modified_files {
+            let is_doc = file.starts_with("docs/")
+                || file.ends_with(".md")
+                || file.starts_with(".gost/");
+            if !is_doc && (file.starts_with("src/") || file.contains("/src/")) {
+                return Err(format!(
+                    "☭ Veto Fase 3: Modificação em código de produção proibida na fase de contratos! Arquivo violador: {}",
+                    file
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    pub fn compile_closing_chronicle(&self, scope: &str, summary: &str) -> String {
+        let ticket_str = match self.ticket_id {
+            Some(id) => format!(" (closes #{})", id),
+            None => String::new(),
+        };
+
+        let header = format!("docs({}): {}{}", scope, summary, ticket_str);
+
+        let mut body = String::new();
+        body.push_str("\n### Crônica da Entrega Soberana (GOST DD-TDD)\n");
+        if let Some(id) = self.ticket_id {
+            body.push_str(&format!("- Ticket: #{}\n", id));
+        }
+        body.push_str(&format!("- Branch: {}\n", self.branch_name));
+        body.push_str(&format!(
+            "- Turnos Processados: {}\n",
+            self.viewport_lines.len()
+        ));
+        body.push_str("- Fases Concluídas: 1 a 9\n");
+
+        format!("{}\n{}", header, body)
     }
 
     pub fn toggle_focus(&mut self) {
