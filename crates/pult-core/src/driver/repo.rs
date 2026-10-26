@@ -145,17 +145,21 @@ impl RepoDriver for CccpGitDriver {
     }
 
     fn check_strict(&self) -> Result<QualityAudit, DriverError> {
-        let stdout = self.run_cccp(&["check", "--strict"])?;
+        let output = Command::new("cccp")
+            .current_dir(&self.workspace_root)
+            .args(&["check", "--strict"])
+            .output()?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
 
         let mut total_checks = 0;
         let mut conforming = 0;
         let mut warnings = 0;
         let mut failures = 0;
-        let mut compliance_index = "100%".to_string();
+        let mut compliance_index = "0%".to_string();
 
         for line in stdout.lines() {
             if line.contains("Total de verificações:") {
-                // Total de verificações: 9 | Conformes: 9 | Avisos: 0 | Falhas: 0
                 for part in line.split('|') {
                     let part = part.trim();
                     if let Some(val) = part.strip_prefix("Total de verificações:") {
@@ -173,7 +177,7 @@ impl RepoDriver for CccpGitDriver {
             }
         }
 
-        let passed = failures == 0;
+        let passed = output.status.success() && failures == 0;
 
         Ok(QualityAudit {
             passed,

@@ -120,3 +120,42 @@ fn test_current_branch_and_status() {
     let status = driver.status().expect("deve obter status git");
     assert_eq!(status.branch, branch);
 }
+
+#[test]
+fn test_mutation_commit_message_empty_scope_and_body() {
+    let driver = CccpGitDriver::new(env::current_dir().unwrap());
+
+    // Escopo vazio Some("") deve formatar sem parênteses
+    let msg = driver
+        .format_commit_message(
+            GostPhase::GreenCode,
+            55,
+            Some("   "),
+            "implementa adapter",
+            Some("Detalhes adicionais da arquitetura"),
+        )
+        .expect("deve formatar");
+
+    assert!(msg.starts_with("feat: implementa adapter (ref #55)\n\n"));
+    assert!(msg.contains("GOST: Fase 5 (Green Code)"));
+    assert!(msg.contains("Detalhes adicionais da arquitetura"));
+}
+
+#[test]
+fn test_mutation_invalid_branch_name() {
+    let driver = CccpGitDriver::new(env::current_dir().unwrap());
+    let res = driver.checkout_branch("   ", true);
+    assert!(res.is_err());
+    match res {
+        Err(DriverError::InvalidBranchName(_)) => {}
+        other => panic!("esperava InvalidBranchName, obteve {:?}", other),
+    }
+}
+
+#[test]
+fn test_mutation_check_strict_execution() {
+    let driver = CccpGitDriver::new(env::current_dir().unwrap());
+    let audit = driver.check_strict().expect("cccp check deve executar");
+    assert!(audit.total_checks > 0);
+    assert!(!audit.compliance_index.is_empty());
+}
