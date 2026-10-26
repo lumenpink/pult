@@ -108,3 +108,42 @@ async fn test_live_ollama_connectivity_if_running() {
         assert!(!tags.is_empty());
     }
 }
+
+#[test]
+fn test_mutation_malformed_ps_json() {
+    let bad_json = "not a json string";
+    let res = OllamaClient::parse_running_models(bad_json);
+    assert!(res.is_err());
+    match res {
+        Err(ScoutError::ParseError(_)) => {}
+        other => panic!("esperava ParseError, obteve {:?}", other),
+    }
+}
+
+#[test]
+fn test_mutation_response_without_code_fences() {
+    let plain_list =
+        "- \"src/auth/token.rs: pub struct TokenBucket\"\n- \"src/lib.rs: pub fn run\"";
+    let res = ScoutEngine::parse_scout_response(plain_list, "qwen2.5-coder:3b", None)
+        .expect("deve parsear lista simples sem fences");
+    assert_eq!(res.symbols.len(), 2);
+    assert!(res.symbols[0].contains("TokenBucket"));
+    assert!(res.symbols[1].contains("run"));
+}
+
+#[test]
+fn test_mutation_empty_ast_context() {
+    let ctx = ScoutPromptContext::new("Tarefa sem arquivos", &[]);
+    let prompt = ctx.format_prompt();
+    assert!(prompt.contains("Tarefa sem arquivos"));
+    assert!(!prompt.contains("###"));
+}
+
+#[test]
+fn test_mutation_engine_custom_model_and_url_normalization() {
+    let client = OllamaClient::with_base_url("http://localhost:11434///");
+    assert_eq!(client.base_url(), "http://localhost:11434");
+
+    let engine = ScoutEngine::with_client(client).with_model("llama3.2:1b");
+    assert_eq!(engine.model_name(), "llama3.2:1b");
+}
