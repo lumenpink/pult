@@ -94,15 +94,15 @@ impl OllamaClient {
 
     pub async fn list_tags(&self) -> Result<Vec<String>, ScoutError> {
         let url = format!("{}/api/tags", self.base_url);
-        let res = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| ScoutError::OllamaUnreachable {
-                endpoint: self.base_url.clone(),
-                message: e.to_string(),
-            })?;
+        let res =
+            self.client
+                .get(&url)
+                .send()
+                .await
+                .map_err(|e| ScoutError::OllamaUnreachable {
+                    endpoint: self.base_url.clone(),
+                    message: e.to_string(),
+                })?;
 
         let tags: TagsResponse = res
             .json()
@@ -113,15 +113,15 @@ impl OllamaClient {
 
     pub async fn list_running_models(&self) -> Result<Vec<GpuModelInfo>, ScoutError> {
         let url = format!("{}/api/ps", self.base_url);
-        let res = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| ScoutError::OllamaUnreachable {
-                endpoint: self.base_url.clone(),
-                message: e.to_string(),
-            })?;
+        let res =
+            self.client
+                .get(&url)
+                .send()
+                .await
+                .map_err(|e| ScoutError::OllamaUnreachable {
+                    endpoint: self.base_url.clone(),
+                    message: e.to_string(),
+                })?;
 
         let text = res
             .text()

@@ -41,7 +41,8 @@ impl<'a> ScoutPromptContext<'a> {
         prompt.push_str("Você é o Scout, assistente local de filtragem cirúrgica de código.\n");
         prompt.push_str("Analise a tarefa e o sumário de assinaturas da base de código abaixo.\n");
         prompt.push_str("Identifique EXCLUSIVAMENTE os 2 a 4 símbolos, funções, structs ou traits diretamente pertinentes para implementar a tarefa.\n");
-        prompt.push_str("Responda APENAS com um bloco de código yaml no seguinte formato exato:\n\n");
+        prompt
+            .push_str("Responda APENAS com um bloco de código yaml no seguinte formato exato:\n\n");
         prompt.push_str("```yaml\n");
         prompt.push_str("injected_ast:\n");
         prompt.push_str("  - \"caminho/arquivo: assinatura do simbolo\"\n");
