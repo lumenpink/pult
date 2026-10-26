@@ -1,0 +1,18 @@
+[package]
+name = "pult-tui"
+version = "0.1.0-dev.1"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Terminal user interface for Pult using Ratatui and Crossterm"
+
+[[bin]]
+name = "pult"
+path = "src/main.rs"
+
+[dependencies]
+pult-core = { path = "../pult-core" }
+ratatui = "0.29"
+crossterm = "0.28"
+tui-textarea = "0.7"
+clap = { version = "4.5", features = ["derive"] }
+tokio = { version = "1.40", features = ["full"] }

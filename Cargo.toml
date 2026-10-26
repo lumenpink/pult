@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/pult-core",
+    "crates/pult-tui",
+]
+resolver = "2"

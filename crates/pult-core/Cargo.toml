@@ -1,0 +1,16 @@
+[package]
+name = "pult-core"
+version = "0.1.0-dev.1"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Core domain logic, AST extractors, Ollama Scout client, and session persistence for Pult"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+tokio = { version = "1.40", features = ["full"] }
+thiserror = "2.0"
+
+[dev-dependencies]
+tempfile = "3.12"
