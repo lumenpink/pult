@@ -8,4 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Inicialização do repositório em conformidade com o padrão GOST.
+- Inicialização do repositório em conformidade com o padrão GOST (#1).
+- `crates/pult-core`: Entidades centrais de domínio (`GostPhase`, `Session`, `Turn`, `Actor`, `TurnStatus`) (#2).
+- `crates/pult-core`: Parser e serializador canônico de sessões em Markdown com Frontmatter YAML e turnos delimitados por comentários HTML (#2).
+- `crates/pult-core`: Repositório de persistência atômica em disco `FileSessionStorage` com suporte a sessões rascunho (`tXXXXX-...`) e formais (`000042-...`) (#2).
