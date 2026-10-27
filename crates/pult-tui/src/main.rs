@@ -107,23 +107,22 @@ async fn run_tui(cli: Cli, repo_dir: PathBuf) -> io::Result<()> {
 
     // 4. Suporte a log de auditoria (-l / --log)
     let audit_logger = cli.log.as_ref().and_then(|log_arg| {
-        let log_path = if log_arg.trim().is_empty()
-            || log_arg == ".antigravity/pult/logs/interacoes.log"
-        {
-            let sess_name = app
-                .session
-                .lock()
-                .ok()
-                .and_then(|l| l.as_ref().map(|s| s.metadata.session_id.clone()))
-                .unwrap_or_else(|| "sessao-inicial".to_string());
-            repo_dir
-                .join(".antigravity/pult/logs")
-                .join(format!("{}.log", sess_name))
-        } else if std::path::Path::new(log_arg).is_absolute() {
-            PathBuf::from(log_arg)
-        } else {
-            repo_dir.join(log_arg)
-        };
+        let log_path =
+            if log_arg.trim().is_empty() || log_arg == ".antigravity/pult/logs/interacoes.log" {
+                let sess_name = app
+                    .session
+                    .lock()
+                    .ok()
+                    .and_then(|l| l.as_ref().map(|s| s.metadata.session_id.clone()))
+                    .unwrap_or_else(|| "sessao-inicial".to_string());
+                repo_dir
+                    .join(".antigravity/pult/logs")
+                    .join(format!("{}.log", sess_name))
+            } else if std::path::Path::new(log_arg).is_absolute() {
+                PathBuf::from(log_arg)
+            } else {
+                repo_dir.join(log_arg)
+            };
         match pult_core::AuditLogger::new(&log_path) {
             Ok(logger) => {
                 app.append_viewport_line(&format!(
