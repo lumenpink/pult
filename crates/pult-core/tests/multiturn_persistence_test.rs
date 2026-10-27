@@ -21,11 +21,7 @@ fn test_multiturn_continuous_persistence_and_streaming() {
     storage.save(&session).expect("salvar turno 1");
 
     // 3. Segundo turno: Agente Externo inicia streaming com InProgress
-    let turn2 = session.add_turn(
-        Actor::Agy,
-        String::new(),
-        TurnStatus::InProgress,
-    );
+    let turn2 = session.add_turn(Actor::Agy, String::new(), TurnStatus::InProgress);
     assert_eq!(turn2.turn_number, 2);
     assert_eq!(turn2.status, TurnStatus::InProgress);
     storage.save(&session).expect("salvar turno 2 inicial");
@@ -38,7 +34,9 @@ fn test_multiturn_continuous_persistence_and_streaming() {
     storage.save(&session).expect("salvar chunk 2");
 
     // Valida que o arquivo em disco já contém o streaming parcial
-    let loaded_partial = storage.load(&session.metadata.session_id).expect("load partial");
+    let loaded_partial = storage
+        .load(&session.metadata.session_id)
+        .expect("load partial");
     assert_eq!(loaded_partial.turns.len(), 2);
     assert_eq!(
         loaded_partial.turns[1].content,
@@ -69,7 +67,9 @@ fn test_multiturn_continuous_persistence_and_streaming() {
     storage.save(&session).expect("salvar turno 4");
 
     // 8. Recarrega sessão final do disco e valida integridade dos 4 turnos
-    let final_session = storage.load(&session.metadata.session_id).expect("load final");
+    let final_session = storage
+        .load(&session.metadata.session_id)
+        .expect("load final");
     assert_eq!(final_session.turns.len(), 4);
     assert_eq!(final_session.turns[0].turn_number, 1);
     assert_eq!(final_session.turns[0].actor, Actor::User);
