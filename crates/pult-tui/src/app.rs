@@ -218,8 +218,9 @@ impl App {
         match action {
             crate::event::TuiAction::SpecApproved => {
                 if self.gost_phase != GostPhase::SpecContract {
-                    let msg = "Apenas a Fase 3 (Doc / Spec Contract) pode ser aprovada para Red Test"
-                        .to_string();
+                    let msg =
+                        "Apenas a Fase 3 (Doc / Spec Contract) pode ser aprovada para Red Test"
+                            .to_string();
                     self.append_viewport_line(&format!("⚠ {}", msg));
                     return Err(msg);
                 }
