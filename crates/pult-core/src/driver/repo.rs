@@ -307,6 +307,7 @@ impl RepoDriver for CccpGitDriver {
     ) -> Result<String, DriverError> {
         self.validate_phase_diff(phase)?;
         let msg = self.format_commit_message(phase, ticket_id, scope, subject, body)?;
+        self.run_git(&["add", "-A"])?;
         self.run_git(&["commit", "-m", &msg])?;
         Ok(msg)
     }

@@ -147,11 +147,30 @@ impl ScoutEngine {
         )
     }
 
+    /// Detecta se a entrada do usuário é uma resposta curta afirmativa ou de confirmação
+    pub fn is_short_confirmation(text: &str) -> bool {
+        let cleaned = text
+            .trim()
+            .trim_matches(|c: char| c.is_ascii_punctuation())
+            .to_lowercase();
+        matches!(
+            cleaned.as_str(),
+            "y" | "yes" | "sim" | "s" | "ok" | "concordo" | "aprovado" | "aprovo"
+        )
+    }
+
     pub async fn filter_with_bypass(
         &self,
         task_intent: &str,
         ast_files: &[ExtractedAstFile],
     ) -> Result<ScoutResult, ScoutError> {
+        if ast_files.is_empty() || Self::is_short_confirmation(task_intent) {
+            let ctx = ScoutPromptContext::new(task_intent, ast_files);
+            let mut bypassed = ScoutResult::bypassed();
+            bypassed.full_prompt = ctx.format_prompt();
+            return Ok(bypassed);
+        }
+
         match self.filter_symbols(task_intent, ast_files).await {
             Ok(res) => Ok(res),
             Err(ScoutError::OllamaUnreachable { .. }) => {
