@@ -229,8 +229,8 @@ fn test_mutation_shortcuts_invalid_phases_and_merge_failure() {
 
     let driver = FailingMergeDriver;
 
-    // Mutante 1: Aprovar spec fora da Fase 3
-    let res_spec = app.execute_action(TuiAction::SpecApproved, &driver);
+    // Mutante 1: approve_spec_contract direto fora da Fase 3
+    let res_spec = app.approve_spec_contract();
     assert!(res_spec.is_err());
     assert_eq!(app.phase(), GostPhase::Ticket);
 

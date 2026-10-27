@@ -205,9 +205,9 @@ impl RepoDriver for CccpGitDriver {
             .ok_or_else(|| DriverError::PhaseDoesNotAllowCommit(phase.number()))?;
 
         let tag = if phase == GostPhase::CloseTicket {
-            format!("(closes #{})", ticket_id)
+            format!("(closes #{} - ph9)", ticket_id)
         } else {
-            format!("(ref #{})", ticket_id)
+            format!("(ref #{} - ph{})", ticket_id, phase.number())
         };
 
         let header = match scope {

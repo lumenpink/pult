@@ -219,13 +219,7 @@ impl App {
     ) -> Result<String, String> {
         match action {
             crate::event::TuiAction::SpecApproved => {
-                if self.gost_phase != GostPhase::SpecContract {
-                    let msg =
-                        "Apenas a Fase 3 (Doc / Spec Contract) pode ser aprovada para Red Test"
-                            .to_string();
-                    self.append_viewport_line(&format!("⚠ {}", msg));
-                    return Err(msg);
-                }
+                let current_phase = self.gost_phase;
 
                 // Obtém status de arquivos modificados via driver
                 let status = driver.status().map_err(|e| e.to_string())?;
@@ -235,30 +229,123 @@ impl App {
                     self.branch_name.as_str()
                 };
 
-                if effective_branch == "main" || effective_branch == "master" {
+                if current_phase >= GostPhase::SpecContract
+                    && (effective_branch == "main" || effective_branch == "master")
+                {
                     let err_msg = "Bloqueio de Governança: Não é permitido operar as Fases 3 a 9 na branch main/master. Crie uma branch de trabalho primeiro com /branch <nome>.".to_string();
                     self.append_viewport_line(&format!("❌ {}", err_msg));
                     return Err(err_msg);
                 }
 
-                let file_refs: Vec<&str> = status
-                    .modified_files
-                    .iter()
-                    .chain(status.untracked_files.iter())
-                    .map(|s| s.as_str())
-                    .collect();
-
                 // Valida guarda estrita da Fase 3
-                if let Err(veto_err) = self.check_phase3_guard(&file_refs) {
-                    self.append_viewport_line(&format!("❌ {}", veto_err));
-                    return Err(veto_err);
+                if current_phase == GostPhase::SpecContract {
+                    let file_refs: Vec<&str> = status
+                        .modified_files
+                        .iter()
+                        .chain(status.untracked_files.iter())
+                        .map(|s| s.as_str())
+                        .collect();
+                    if let Err(veto_err) = self.check_phase3_guard(&file_refs) {
+                        self.append_viewport_line(&format!("❌ {}", veto_err));
+                        return Err(veto_err);
+                    }
                 }
 
-                // Aprova e avança para Fase 4
-                let next = self.approve_spec_contract().map_err(|e| e.to_string())?;
-                let ok_msg =
-                    "★ [GOST] Especificação aprovada via Ctrl+P. Avançando para FASE 4 (Red Test)."
-                        .to_string();
+                // Trava Gosplan na Fase 8 (QualityGate)
+                if current_phase == GostPhase::QualityGate {
+                    let audit_info = driver.check_strict().map_err(|e| e.to_string())?;
+                    if audit_info.failures > 0 || !audit_info.passed {
+                        let veto_msg = format!(
+                            "❌ ★ GOSPLAN QUALITY CONTROL: MERGE/ADVANCE LOCK REJECTED ★ Falhas detectadas: {} (Avisos: {}). Corrija as violações antes de prosseguir.",
+                            audit_info.failures, audit_info.warnings
+                        );
+                        self.append_viewport_line(&veto_msg);
+                        return Err(veto_msg);
+                    }
+                }
+
+                // Commits automáticos nas fases normativas (Fases 3, 4, 5 e 9)
+                let ticket_id = self.ticket_id.or_else(|| {
+                    self.session.lock().ok().and_then(|guard| {
+                        guard
+                            .as_ref()
+                            .and_then(|s| s.metadata.ticket.as_ref().map(|t| t.id))
+                    })
+                });
+
+                if let Some(tid) = ticket_id {
+                    let commit_result = match current_phase {
+                        GostPhase::SpecContract => driver.commit_phase(
+                            GostPhase::SpecContract,
+                            tid,
+                            Some("spec"),
+                            "especificar contrato preliminar",
+                            None,
+                        ),
+                        GostPhase::RedTest => driver.commit_phase(
+                            GostPhase::RedTest,
+                            tid,
+                            Some("test"),
+                            "adicionar teste falho comprovando requisito",
+                            None,
+                        ),
+                        GostPhase::GreenCode => driver.commit_phase(
+                            GostPhase::GreenCode,
+                            tid,
+                            Some("core"),
+                            "implementacao minima funcional com testes verdes",
+                            None,
+                        ),
+                        GostPhase::CloseTicket => {
+                            let chronicle =
+                                self.compile_closing_chronicle("docs", "finalizar ciclo GOST");
+                            let res = driver.commit_phase(
+                                GostPhase::CloseTicket,
+                                tid,
+                                Some("docs"),
+                                "finalizar ciclo e documentacao",
+                                Some(&chronicle),
+                            );
+                            let _ = driver.close_ticket(tid);
+                            res
+                        }
+                        _ => Ok(String::new()),
+                    };
+
+                    if let Err(e) = commit_result {
+                        let warn_msg = format!(
+                            "⚠ Aviso ao gravar commit da fase {:?}: {}",
+                            current_phase, e
+                        );
+                        self.append_viewport_line(&warn_msg);
+                    }
+                }
+
+                // Transição para próxima fase
+                let next = match current_phase {
+                    GostPhase::Ticket => GostPhase::NewBranch,
+                    GostPhase::NewBranch => GostPhase::SpecContract,
+                    GostPhase::SpecContract => GostPhase::RedTest,
+                    GostPhase::RedTest => GostPhase::GreenCode,
+                    GostPhase::GreenCode => GostPhase::Refactor,
+                    GostPhase::Refactor => GostPhase::MutationTest,
+                    GostPhase::MutationTest => GostPhase::QualityGate,
+                    GostPhase::QualityGate => GostPhase::CloseTicket,
+                    GostPhase::CloseTicket => GostPhase::CloseTicket,
+                };
+
+                self.gost_phase = next;
+
+                let ok_msg = if current_phase == GostPhase::CloseTicket {
+                    "★ [GOST] Ciclo concluído e ticket encerrado com sucesso.".to_string()
+                } else {
+                    format!(
+                        "★ [GOST] Fase {} aprovada via /approve. Avançando para FASE {} ({}).",
+                        current_phase.number(),
+                        next.number(),
+                        next.name()
+                    )
+                };
                 self.append_viewport_line(&ok_msg);
 
                 // Avalia conformidade via driver

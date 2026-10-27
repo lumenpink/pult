@@ -136,7 +136,7 @@ fn test_mutation_commit_message_empty_scope_and_body() {
         )
         .expect("deve formatar");
 
-    assert!(msg.starts_with("feat: implementa adapter (ref #55)\n\n"));
+    assert!(msg.starts_with("feat: implementa adapter (ref #55 - ph5)\n\n"));
     assert!(msg.contains("GOST: Fase 5 (Green Code)"));
     assert!(msg.contains("Detalhes adicionais da arquitetura"));
 }
