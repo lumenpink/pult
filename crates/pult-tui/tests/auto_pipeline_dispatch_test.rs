@@ -280,3 +280,56 @@ fn test_approve_phase5_stops_at_phase8_if_quality_gate_fails() {
     let pending = app.take_pending_dispatch();
     assert!(pending.is_none());
 }
+
+#[test]
+fn test_mutation_phase_prompt_synthesis_without_ticket_id() {
+    let prompt = App::phase_prompt_for(GostPhase::SpecContract, None, "feat/untracked");
+    assert!(prompt.contains("[DIRETIVA DE OPERAÇÃO - SUBAGENTE DE EXECUÇÃO PULT]"));
+    assert!(prompt.contains("ticket atual"));
+    assert!(prompt.contains("feat/untracked"));
+
+    let prompt_refactor = App::phase_prompt_for(GostPhase::Refactor, None, "fix/patch");
+    assert!(prompt_refactor.contains("[Fase 6 - Refactor]"));
+    assert!(prompt_refactor.contains("ticket atual"));
+
+    let prompt_mutation = App::phase_prompt_for(GostPhase::MutationTest, None, "fix/patch");
+    assert!(prompt_mutation.contains("[Fase 7 - Mutation Test]"));
+}
+
+#[test]
+fn test_mutation_take_pending_dispatch_is_idempotent() {
+    let mut app = App::new();
+    assert!(app.take_pending_dispatch().is_none());
+
+    app.pending_dispatch = Some("dispatch payload".into());
+    assert_eq!(app.take_pending_dispatch(), Some("dispatch payload".into()));
+    assert!(app.take_pending_dispatch().is_none());
+}
+
+#[test]
+fn test_mutation_session_phase_synchronized_on_phase5_chain() {
+    let committed = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let ticket_closed = Arc::new(AtomicBool::new(false));
+
+    let driver = MockDispatchDriver {
+        current_branch_name: "feat/26-auto-dispatch".to_string(),
+        audit_failures: 0,
+        audit_passed: true,
+        committed_phases: committed.clone(),
+        ticket_closed: ticket_closed.clone(),
+    };
+
+    let mut app = App::new();
+    let session = pult_core::Session::new_formal(26, "auto-dispatch", "feat/26-auto-dispatch");
+    app.set_session(session);
+    app.set_ticket_info(Some(26), "feat/26-auto-dispatch", 5);
+    app.set_gost_phase(GostPhase::GreenCode);
+
+    let res = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(res.is_ok());
+    assert_eq!(app.phase(), GostPhase::CloseTicket);
+
+    let sess_lock = app.session.lock().unwrap();
+    let sess = sess_lock.as_ref().unwrap();
+    assert_eq!(sess.metadata.gost.phase, 9);
+}
