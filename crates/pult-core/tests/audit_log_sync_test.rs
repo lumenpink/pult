@@ -70,7 +70,9 @@ fn test_mutation_audit_logger_retarget_idempotent_same_path() {
     logger.log("STEP1", "Primeiro passo");
 
     // Retarget para o mesmo caminho
-    logger.retarget(log_path.clone()).expect("same path retarget");
+    logger
+        .retarget(log_path.clone())
+        .expect("same path retarget");
     logger.log("STEP2", "Segundo passo");
 
     let content = fs::read_to_string(&log_path).expect("read log");
