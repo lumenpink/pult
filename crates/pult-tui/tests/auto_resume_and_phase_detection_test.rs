@@ -84,7 +84,11 @@ impl RepoDriver for MockPhaseDetectionDriver {
         Ok(())
     }
 
-    fn detect_branch_phase(&self, _branch: &str, _ticket_id: Option<u32>) -> Result<GostPhase, DriverError> {
+    fn detect_branch_phase(
+        &self,
+        _branch: &str,
+        _ticket_id: Option<u32>,
+    ) -> Result<GostPhase, DriverError> {
         Ok(self.detected_phase)
     }
 }
@@ -170,7 +174,10 @@ fn test_branch_changed_action_reconciles_session_and_phase() {
         detected_phase: GostPhase::GreenCode, // Fase 5
     };
 
-    let res = app.execute_action(TuiAction::BranchChanged("feat/5-feature-cinco".into()), &driver);
+    let res = app.execute_action(
+        TuiAction::BranchChanged("feat/5-feature-cinco".into()),
+        &driver,
+    );
     assert!(res.is_ok());
     assert_eq!(app.ticket_id(), Some(5));
     assert_eq!(app.phase(), GostPhase::GreenCode);

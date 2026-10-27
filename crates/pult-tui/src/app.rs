@@ -294,11 +294,14 @@ impl App {
                             .metadata
                             .ticket
                             .as_ref()
-                            .map(|t| t.id == ticket_id || (!branch.is_empty() && t.branch == branch))
+                            .map(|t| {
+                                t.id == ticket_id || (!branch.is_empty() && t.branch == branch)
+                            })
                             .unwrap_or(false)
                     } else {
                         content.contains(&format!("id: {}", ticket_id))
-                            || (!branch.is_empty() && content.contains(&format!("branch: {}", branch)))
+                            || (!branch.is_empty()
+                                && content.contains(&format!("branch: {}", branch)))
                     };
                     if has_match {
                         candidate_by_frontmatter = Some(path);
@@ -318,7 +321,8 @@ impl App {
         self.ticket_id = tid_opt;
 
         if let Some(tid) = tid_opt {
-            if let Some(session_path) = Self::find_session_for_ticket(&self.repo_path, tid, branch) {
+            if let Some(session_path) = Self::find_session_for_ticket(&self.repo_path, tid, branch)
+            {
                 if let Ok(()) = self.load_session_file(&session_path) {
                     self.append_viewport_line(&format!(
                         "✓ Sessão anterior restaurada a partir de '{}'.",
@@ -740,7 +744,9 @@ impl App {
                 self.auto_sync_branch_state(&new_branch, driver);
                 let msg = format!(
                     "✓ Alternado para a branch '{}' (Ticket: {:?}, Fase: {}).",
-                    new_branch, self.ticket_id, self.gost_phase.number()
+                    new_branch,
+                    self.ticket_id,
+                    self.gost_phase.number()
                 );
                 Ok(msg)
             }

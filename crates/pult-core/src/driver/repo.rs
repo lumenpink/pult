@@ -54,7 +54,11 @@ pub trait RepoDriver: Send + Sync {
     }
 
     /// Detecta a fase GOST ativa a partir dos commits existentes no branch.
-    fn detect_branch_phase(&self, branch: &str, ticket_id: Option<u32>) -> Result<GostPhase, DriverError> {
+    fn detect_branch_phase(
+        &self,
+        branch: &str,
+        ticket_id: Option<u32>,
+    ) -> Result<GostPhase, DriverError> {
         let _ = (branch, ticket_id);
         Ok(GostPhase::SpecContract)
     }
@@ -326,13 +330,21 @@ impl RepoDriver for CccpGitDriver {
         })
     }
 
-    fn detect_branch_phase(&self, branch: &str, ticket_id: Option<u32>) -> Result<GostPhase, DriverError> {
+    fn detect_branch_phase(
+        &self,
+        branch: &str,
+        ticket_id: Option<u32>,
+    ) -> Result<GostPhase, DriverError> {
         if branch == "main" || branch == "master" {
             return Ok(GostPhase::Ticket);
         }
 
         let log_result = self
-            .run_git(&["log", &format!("main..{}", branch), "--pretty=format:%B---COMMIT-END---"])
+            .run_git(&[
+                "log",
+                &format!("main..{}", branch),
+                "--pretty=format:%B---COMMIT-END---",
+            ])
             .or_else(|_| self.run_git(&["log", "-n", "30", "--pretty=format:%B---COMMIT-END---"]));
 
         let commits_text = match log_result {
