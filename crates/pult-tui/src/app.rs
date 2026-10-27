@@ -94,6 +94,14 @@ impl App {
         self.gost_phase
     }
 
+    pub fn ticket_id(&self) -> Option<u32> {
+        self.ticket_id
+    }
+
+    pub fn branch_name(&self) -> &str {
+        &self.branch_name
+    }
+
     pub fn set_gost_phase(&mut self, phase: GostPhase) {
         self.gost_phase = phase;
     }
@@ -113,13 +121,41 @@ impl App {
 
     pub fn header_branch_label(&self) -> String {
         format!(
-            "[{}] {}",
+            "[{}] 🌿 {} ",
             match self.ticket_id {
                 Some(id) => format!("#{}", id),
                 None => "Rascunho".to_string(),
             },
             self.branch_name
         )
+    }
+
+    /// Sintetiza título e corpo do ticket nos moldes GOST a partir dos turnos iniciais.
+    pub fn synthesize_ticket_data(&self) -> (String, String) {
+        let mut first_user_prompt = "demanda do usuario".to_string();
+        if let Ok(guard) = self.session.lock() {
+            if let Some(ref sess) = *guard {
+                if let Some(turn) = sess.turns.iter().find(|t| t.actor == pult_core::Actor::User) {
+                    first_user_prompt = turn
+                        .content
+                        .lines()
+                        .next()
+                        .unwrap_or("demanda")
+                        .trim()
+                        .to_string();
+                }
+            }
+        }
+        let clean_prompt = first_user_prompt.chars().take(40).collect::<String>();
+        let title = format!("feat: {}", clean_prompt);
+        let body = format!(
+            "## Descrição\n{}\n\n## Tasks / DD-TDD Checklist (9 Fases GOST)\n\
+             - [ ] Fase 1 - Ticket\n- [ ] Fase 2 - Branch\n- [ ] Fase 3 - Doc/Spec\n\
+             - [ ] Fase 4 - Red\n- [ ] Fase 5 - Green\n- [ ] Fase 6 - Refactor\n\
+             - [ ] Fase 7 - Mutation\n- [ ] Fase 8 - Quality Gate\n- [ ] Fase 9 - Close\n",
+            first_user_prompt
+        );
+        (title, body)
     }
 
     /// Carrega uma sessão gravada em disco a partir de um caminho de arquivo,
@@ -231,6 +267,47 @@ impl App {
         match action {
             crate::event::TuiAction::SpecApproved => {
                 let current_phase = self.gost_phase;
+
+                // Automação da Fase 1 -> Fase 2 -> Fase 3 via Scout & Driver
+                if current_phase == GostPhase::Ticket && self.ticket_id.is_none() {
+                    let (title, body) = self.synthesize_ticket_data();
+                    if let Ok((tid, branch_suggestion)) = driver.create_ticket(&title, &body) {
+                        let branch = if branch_suggestion.starts_with("feat/")
+                            || branch_suggestion.starts_with("fix/")
+                            || branch_suggestion.starts_with("docs/")
+                        {
+                            branch_suggestion
+                        } else {
+                            format!("feat/{}", branch_suggestion)
+                        };
+                        let _ = driver.checkout_branch(&branch, true);
+                        self.set_ticket_info(Some(tid), &branch, 3);
+                        self.append_viewport_line(&format!(
+                            "★ [GOST Fase 2] Ticket #{} criado na forja. Alternado para a branch '{}'.",
+                            tid, branch
+                        ));
+                        self.gost_phase = GostPhase::SpecContract;
+
+                        // Sincroniza metadados da sessão ativa
+                        if let Ok(mut lock) = self.session.lock() {
+                            if let Some(ref mut sess) = *lock {
+                                sess.metadata.gost.phase = 3;
+                                sess.metadata.ticket = Some(pult_core::TicketRef {
+                                    id: tid,
+                                    state: "open".to_string(),
+                                    branch: branch.clone(),
+                                });
+                            }
+                        }
+
+                        let ok_msg = format!(
+                            "★ [GOST] Fase 1 e 2 automatizadas. Ticket #{} criado na branch '{}'. Avançando para FASE 3 (SpecContract).",
+                            tid, branch
+                        );
+                        self.append_viewport_line(&ok_msg);
+                        return Ok(ok_msg);
+                    }
+                }
 
                 // Obtém status de arquivos modificados via driver
                 let status = driver.status().map_err(|e| e.to_string())?;
@@ -685,9 +762,33 @@ pub fn autocomplete_slash_command(prefix: &str) -> Option<&'static str> {
 
 /// Formata o prompt despachado ao Agente Externo incorporando o histórico multi-turnos recente.
 pub fn format_prompt_with_history(
-    _session: &Session,
+    session: &Session,
     prompt: &str,
     injected_context: &str,
 ) -> String {
-    format!("{}{}", prompt, injected_context)
+    let mut history_block = String::new();
+    let completed_turns: Vec<_> = session
+        .turns
+        .iter()
+        .filter(|t| t.status == pult_core::TurnStatus::Completed)
+        .collect();
+
+    if !completed_turns.is_empty() {
+        history_block.push_str("\n--- Contexto Histórico Recente da Sessão ---\n");
+        // Pega até os últimos 6 turnos concluídos
+        for turn in completed_turns.iter().rev().take(6).rev() {
+            let actor_label = match turn.actor {
+                pult_core::Actor::User => "Usuária",
+                pult_core::Actor::Agy => "Agente",
+                pult_core::Actor::Scout => "Scout",
+            };
+            history_block.push_str(&format!("[{}]: {}\n", actor_label, turn.content.trim()));
+        }
+        history_block.push_str("-------------------------------------------\n\n");
+    }
+
+    format!(
+        "{}[Mensagem Atual da Usuária]:\n{}{}",
+        history_block, prompt, injected_context
+    )
 }

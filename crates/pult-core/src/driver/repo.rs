@@ -46,6 +46,12 @@ pub trait RepoDriver: Send + Sync {
 
     /// Encerra um ticket na forja remota (`cccp ticket close <id>`).
     fn close_ticket(&self, ticket_id: u32) -> Result<(), DriverError>;
+
+    /// Cria um novo ticket na forja remota via `cccp ticket new`.
+    fn create_ticket(&self, title: &str, body: &str) -> Result<(u32, String), DriverError> {
+        let _ = (title, body);
+        Ok((1, "feat/1-default".to_string()))
+    }
 }
 
 /// Implementação padrão que delega ao binário `cccp` e comandos Git nativos.
@@ -303,5 +309,43 @@ impl RepoDriver for CccpGitDriver {
     fn close_ticket(&self, ticket_id: u32) -> Result<(), DriverError> {
         self.run_cccp(&["ticket", "close", &ticket_id.to_string()])?;
         Ok(())
+    }
+
+    fn create_ticket(&self, title: &str, body: &str) -> Result<(u32, String), DriverError> {
+        let stdout = self.run_cccp(&["ticket", "new", "-t", title, "-b", body])?;
+        parse_ticket_creation_output(&stdout).ok_or_else(|| DriverError::CommandFailed {
+            command: format!("cccp ticket new -t {} -b ...", title),
+            exit_code: Some(1),
+            stderr: format!("Falha ao extrair ID do ticket criado: {}", stdout),
+        })
+    }
+}
+
+/// Extrai ID e branch da saída de `cccp ticket new`.
+pub fn parse_ticket_creation_output(output: &str) -> Option<(u32, String)> {
+    let mut id = None;
+    let mut branch = None;
+
+    for line in output.lines() {
+        let trimmed = line.trim();
+        if let Some(pos) = trimmed.find("Created ticket #") {
+            let after = &trimmed[pos + "Created ticket #".len()..];
+            let id_str = after.split(|c: char| !c.is_numeric()).next().unwrap_or("");
+            if let Ok(parsed_id) = id_str.parse::<u32>() {
+                id = Some(parsed_id);
+            }
+        }
+        if let Some(pos) = trimmed.find("• Branch:") {
+            let b = trimmed[pos + "• Branch:".len()..].trim();
+            if !b.is_empty() {
+                branch = Some(b.to_string());
+            }
+        }
+    }
+
+    match (id, branch) {
+        (Some(id), Some(b)) => Some((id, b)),
+        (Some(id), None) => Some((id, format!("feat/{}-ticket", id))),
+        _ => None,
     }
 }

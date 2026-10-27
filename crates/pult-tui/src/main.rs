@@ -507,7 +507,15 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
     }
 
     let directive = phase.agent_directive(&branch_name);
-    let full_prompt = format!("{}\n\n{}{}", directive, prompt, injected_context);
+    let prompt_with_history = {
+        let guard = session_arc.lock().unwrap();
+        if let Some(ref sess) = *guard {
+            pult_tui::app::format_prompt_with_history(sess, &prompt, &injected_context)
+        } else {
+            format!("{}{}", prompt, injected_context)
+        }
+    };
+    let full_prompt = format!("{}\n\n{}", directive, prompt_with_history);
 
     if let Some(ref l) = audit {
         l.log(

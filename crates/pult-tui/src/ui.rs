@@ -29,11 +29,6 @@ pub fn render(app: &App, frame: &mut Frame) {
 }
 
 fn render_header(app: &App, frame: &mut Frame, area: Rect) {
-    let ticket_str = match app.ticket_id {
-        Some(id) => format!("#{}", id),
-        None => "Rascunho".to_string(),
-    };
-
     let title_span = Span::styled(
         format!(" ☭ PULT v{} ", pult_core::short_version()),
         Style::default()
@@ -70,8 +65,10 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
             .add_modifier(Modifier::BOLD),
     );
     let branch_span = Span::styled(
-        format!(" [{}] {} ", ticket_str, app.branch_name),
-        Style::default().fg(Color::Green),
+        app.header_branch_label(),
+        Style::default()
+            .fg(Color::Green)
+            .add_modifier(Modifier::BOLD),
     );
 
     let header_line = Line::from(vec![
