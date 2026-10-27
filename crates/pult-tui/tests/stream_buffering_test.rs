@@ -42,7 +42,6 @@ fn test_closing_chronicle_uses_anarchist_vocabulary() {
     );
 }
 
-
 #[test]
 fn test_mutation_stream_chunk_empty_and_consecutive_newlines() {
     let mut app = App::new();
