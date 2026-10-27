@@ -14,7 +14,8 @@ fn test_agent_directive_overrides_global_gemini_rules_and_has_no_gost_preaching(
             n
         );
         assert!(
-            directive.contains("Anulação de escopo") && directive.contains("Você NÃO é o maestro do ciclo"),
+            directive.contains("Anulação de escopo")
+                && directive.contains("Você NÃO é o maestro do ciclo"),
             "Fase {} deve cancelar explicitamente regras globais de orquestração",
             n
         );
@@ -156,7 +157,11 @@ fn test_phase1_approve_automates_phase2_transition_to_phase3() {
     };
 
     let res = app.execute_action(pult_tui::event::TuiAction::SpecApproved, &driver);
-    assert!(res.is_ok(), "Aprovação da Fase 1 deve automatizar criação e avançar: {:?}", res);
+    assert!(
+        res.is_ok(),
+        "Aprovação da Fase 1 deve automatizar criação e avançar: {:?}",
+        res
+    );
 
     // Valida que o ticket foi sintetizado e criado
     let created = ticket_created.lock().unwrap();

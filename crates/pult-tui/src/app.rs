@@ -135,7 +135,11 @@ impl App {
         let mut first_user_prompt = "demanda do usuario".to_string();
         if let Ok(guard) = self.session.lock() {
             if let Some(ref sess) = *guard {
-                if let Some(turn) = sess.turns.iter().find(|t| t.actor == pult_core::Actor::User) {
+                if let Some(turn) = sess
+                    .turns
+                    .iter()
+                    .find(|t| t.actor == pult_core::Actor::User)
+                {
                     first_user_prompt = turn
                         .content
                         .lines()
