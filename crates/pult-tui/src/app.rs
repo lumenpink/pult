@@ -30,6 +30,7 @@ pub struct App {
     pub session: Arc<Mutex<Option<Session>>>,
     pub show_help: bool,
     pub pending_dispatch: Option<String>,
+    pub busy_start_time: Option<std::time::Instant>,
 }
 
 impl Default for App {
@@ -70,6 +71,7 @@ impl App {
             session: Arc::new(Mutex::new(None)),
             show_help: false,
             pending_dispatch: None,
+            busy_start_time: None,
         }
     }
 
@@ -930,6 +932,26 @@ impl App {
     pub fn set_busy(&mut self, busy: bool, label: &str) {
         self.is_busy = busy;
         self.busy_label = label.to_string();
+        if busy {
+            self.busy_start_time = Some(std::time::Instant::now());
+        } else {
+            self.busy_start_time = None;
+        }
+    }
+
+    pub fn busy_elapsed_formatted(&self) -> String {
+        if let Some(start) = self.busy_start_time {
+            let secs = start.elapsed().as_secs();
+            if secs < 60 {
+                format!("({}s)", secs)
+            } else {
+                let mins = secs / 60;
+                let rem_secs = secs % 60;
+                format!("({}m {}s)", mins, rem_secs)
+            }
+        } else {
+            String::new()
+        }
     }
 
     pub fn submit_input(&mut self) -> Option<String> {

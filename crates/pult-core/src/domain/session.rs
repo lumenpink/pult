@@ -71,6 +71,7 @@ pub struct Turn {
     pub status: TurnStatus,
     pub tokens: Option<usize>,
     pub tokens_out: Option<usize>,
+    pub elapsed_ms: Option<u64>,
 }
 
 /// Referência a um ticket ativo na forja.
@@ -210,6 +211,10 @@ impl Session {
                 out.push_str(" | TOKENS_OUT: ");
                 out.push_str(&to.to_string());
             }
+            if let Some(ms) = turn.elapsed_ms {
+                let secs = ms as f64 / 1000.0;
+                out.push_str(&format!(" | ELAPSED: {:.2}s", secs));
+            }
             if turn.status != TurnStatus::Completed {
                 out.push_str(" | STATUS: ");
                 out.push_str(turn.status.as_str());
@@ -263,9 +268,19 @@ impl Session {
             status,
             tokens: None,
             tokens_out: None,
+            elapsed_ms: None,
         });
 
         self.turns.last_mut().expect("turno recém adicionado")
+    }
+
+    /// Define o tempo de resposta em milissegundos no último turno registrado.
+    pub fn set_last_turn_elapsed(&mut self, ms: u64) {
+        if let Some(last_turn) = self.turns.last_mut() {
+            last_turn.elapsed_ms = Some(ms);
+            let now_sec = current_epoch_seconds();
+            self.metadata.updated_at = epoch_to_iso(now_sec);
+        }
     }
 
     /// Acrescenta dados incrementais ao conteúdo do último turno (útil para streaming).
@@ -309,7 +324,8 @@ fn parse_markdown_turns(body: &str) -> Vec<Turn> {
         };
 
         let raw_content = body[comment_end..content_end].trim().to_string();
-        let (turn_number, actor, timestamp, tokens, tokens_out, status) = parse_turn_header(header);
+        let (turn_number, actor, timestamp, tokens, tokens_out, status, elapsed_ms) =
+            parse_turn_header(header);
 
         turns.push(Turn {
             turn_number,
@@ -319,6 +335,7 @@ fn parse_markdown_turns(body: &str) -> Vec<Turn> {
             status,
             tokens,
             tokens_out,
+            elapsed_ms,
         });
 
         cursor = content_end;
@@ -336,6 +353,7 @@ fn parse_turn_header(
     Option<usize>,
     Option<usize>,
     TurnStatus,
+    Option<u64>,
 ) {
     let mut turn_number = 1;
     let mut actor = Actor::User;
@@ -343,6 +361,7 @@ fn parse_turn_header(
     let mut tokens = None;
     let mut tokens_out = None;
     let mut status = TurnStatus::Completed;
+    let mut elapsed_ms = None;
 
     for part in header.split('|') {
         let part = part.trim();
@@ -358,12 +377,31 @@ fn parse_turn_header(
             tokens_out = val.trim().parse().ok();
         } else if let Some(val) = part.strip_prefix("STATUS:") {
             status = TurnStatus::parse(val);
+        } else if let Some(val) = part.strip_prefix("ELAPSED:") {
+            let val = val.trim();
+            if let Some(s_val) = val.strip_suffix('s') {
+                if let Ok(secs) = s_val.parse::<f64>() {
+                    elapsed_ms = Some((secs * 1000.0).round() as u64);
+                }
+            } else if let Some(ms_val) = val.strip_suffix("ms") {
+                if let Ok(ms) = ms_val.parse::<u64>() {
+                    elapsed_ms = Some(ms);
+                }
+            }
         } else if let Ok(n) = part.trim().parse::<usize>() {
             turn_number = n;
         }
     }
 
-    (turn_number, actor, timestamp, tokens, tokens_out, status)
+    (
+        turn_number,
+        actor,
+        timestamp,
+        tokens,
+        tokens_out,
+        status,
+        elapsed_ms,
+    )
 }
 
 fn sanitize_slug(slug: &str) -> String {

@@ -300,6 +300,7 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
         audit,
         tx,
     } = ctx;
+    let pipeline_start = std::time::Instant::now();
     if (branch_name == "main" || branch_name == "master")
         && phase >= pult_core::GostPhase::SpecContract
     {
@@ -378,8 +379,16 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
         );
     }
 
+    let scout_start = std::time::Instant::now();
     let scout = pult_core::ScoutEngine::new();
     let scout_result = scout.filter_with_bypass(&prompt, &ast_files).await;
+    let scout_elapsed = scout_start.elapsed();
+    if let Some(ref l) = audit {
+        l.log(
+            "TIME",
+            &format!("[SCOUT_COMPLETED] ({:.2}s)", scout_elapsed.as_secs_f64()),
+        );
+    }
 
     let mut injected_context = String::new();
     match scout_result {
@@ -565,6 +574,7 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
     });
 
     let mut accumulated_agy_response = String::new();
+    let agy_start = std::time::Instant::now();
 
     match runner.spawn() {
         Ok((mut stream_rx, child_handle)) => {
@@ -599,10 +609,13 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
                         let _ = tx.send(PipelineEvent::Chunk(chunk)).await;
                     }
                     pult_core::AgyStreamEvent::Truncated => {
+                        let agy_elapsed = agy_start.elapsed();
+                        let agy_elapsed_ms = agy_elapsed.as_millis() as u64;
                         {
                             let mut guard = session_arc.lock().unwrap();
                             if let Some(sess) = guard.as_mut() {
                                 sess.update_last_turn_status(pult_core::TurnStatus::Truncated);
+                                sess.set_last_turn_elapsed(agy_elapsed_ms);
                                 let _ = storage.save(sess);
                             }
                         }
@@ -616,30 +629,52 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
                             .await;
                     }
                     pult_core::AgyStreamEvent::Completed { exit_code } => {
+                        let agy_elapsed = agy_start.elapsed();
+                        let agy_elapsed_ms = agy_elapsed.as_millis() as u64;
                         {
                             let mut guard = session_arc.lock().unwrap();
                             if let Some(sess) = guard.as_mut() {
                                 sess.update_last_turn_status(pult_core::TurnStatus::Completed);
+                                sess.set_last_turn_elapsed(agy_elapsed_ms);
                                 let _ = storage.save(sess);
                             }
                         }
                         if let Some(ref l) = audit {
                             l.log("AGY_FULL_RESPONSE", &accumulated_agy_response);
+                            l.log(
+                                "TIME",
+                                &format!(
+                                    "[AGY_COMPLETED] ({:.2}s) exit_code: {}",
+                                    agy_elapsed.as_secs_f64(),
+                                    exit_code
+                                ),
+                            );
                             l.log("AGY_RESULT", &format!("Completed exit_code: {}", exit_code));
                         }
                         let _ = tx.send(PipelineEvent::Completed(exit_code)).await;
                         break;
                     }
                     pult_core::AgyStreamEvent::Error(err) => {
+                        let agy_elapsed = agy_start.elapsed();
+                        let agy_elapsed_ms = agy_elapsed.as_millis() as u64;
                         {
                             let mut guard = session_arc.lock().unwrap();
                             if let Some(sess) = guard.as_mut() {
                                 sess.update_last_turn_status(pult_core::TurnStatus::Interrupted);
+                                sess.set_last_turn_elapsed(agy_elapsed_ms);
                                 let _ = storage.save(sess);
                             }
                         }
                         if let Some(ref l) = audit {
                             l.log("AGY_FULL_RESPONSE", &accumulated_agy_response);
+                            l.log(
+                                "TIME",
+                                &format!(
+                                    "[AGY_ERROR] ({:.2}s) err: {}",
+                                    agy_elapsed.as_secs_f64(),
+                                    err
+                                ),
+                            );
                             l.log("AGY_RESULT", &format!("Error: {}", err));
                         }
                         let _ = tx.send(PipelineEvent::Failed(err)).await;
@@ -648,6 +683,13 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
                 }
             }
             let _ = child_handle.await;
+            let total_elapsed = pipeline_start.elapsed();
+            if let Some(ref l) = audit {
+                l.log(
+                    "TIME",
+                    &format!("[PIPELINE_TOTAL] ({:.2}s)", total_elapsed.as_secs_f64()),
+                );
+            }
         }
         Err(e) => {
             {

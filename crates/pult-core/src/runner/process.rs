@@ -168,6 +168,7 @@ impl AgyRunner {
             status: TurnStatus::InProgress,
             tokens: None,
             tokens_out: None,
+            elapsed_ms: None,
         };
 
         session.turns.push(current_turn);

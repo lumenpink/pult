@@ -31,7 +31,7 @@ fn test_header_always_shows_gost_phase_without_spinner() {
 
     terminal
         .draw(|f| {
-            pult_tui::ui::render(f, &mut app);
+            pult_tui::ui::render(&app, f);
         })
         .unwrap();
 
@@ -40,7 +40,7 @@ fn test_header_always_shows_gost_phase_without_spinner() {
 
     // O cabeçalho deve conter a fase fixa
     assert!(
-        content.contains("FASE 3: SpecContract") || content.contains("SpecContract"),
+        content.contains("FASE 3: Doc / Spec Contract"),
         "Cabeçalho deve conter a fase sem ser sobreposto pelo spinner: {}",
         content
     );
