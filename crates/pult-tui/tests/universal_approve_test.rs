@@ -81,7 +81,10 @@ impl RepoDriver for MockUniversalDriver {
         body: Option<&str>,
     ) -> Result<String, DriverError> {
         let msg = self.format_commit_message(phase, ticket_id, scope, subject, body)?;
-        self.committed_phases.lock().unwrap().push((phase, msg.clone()));
+        self.committed_phases
+            .lock()
+            .unwrap()
+            .push((phase, msg.clone()));
         Ok(msg)
     }
 
@@ -158,7 +161,11 @@ fn test_universal_approve_through_all_phases() {
     assert!(ticket_closed.load(Ordering::SeqCst));
 
     let commits = committed.lock().unwrap();
-    assert_eq!(commits.len(), 4, "Devem existir commits para as Fases 3, 4, 5 e 9");
+    assert_eq!(
+        commits.len(),
+        4,
+        "Devem existir commits para as Fases 3, 4, 5 e 9"
+    );
     assert!(commits[0].1.contains("(ref #24 - ph3)"));
     assert!(commits[1].1.contains("(ref #24 - ph4)"));
     assert!(commits[2].1.contains("(ref #24 - ph5)"));
@@ -183,8 +190,15 @@ fn test_quality_gate_lock_blocks_advancement_on_check_failures() {
     };
 
     let res = app.execute_action(TuiAction::SpecApproved, &locked_driver);
-    assert!(res.is_err(), "Avanço deveria ser bloqueado com failures > 0");
+    assert!(
+        res.is_err(),
+        "Avanço deveria ser bloqueado com failures > 0"
+    );
     let err_msg = res.unwrap_err();
     assert!(err_msg.contains("GOSPLAN QUALITY CONTROL") || err_msg.contains("Falhas"));
-    assert_eq!(app.phase(), GostPhase::QualityGate, "Fase deve permanecer em QualityGate");
+    assert_eq!(
+        app.phase(),
+        GostPhase::QualityGate,
+        "Fase deve permanecer em QualityGate"
+    );
 }
