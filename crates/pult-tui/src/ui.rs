@@ -22,6 +22,10 @@ pub fn render(app: &App, frame: &mut Frame) {
     render_viewport(app, frame, chunks[1]);
     render_editor(app, frame, chunks[2]);
     render_footer(app, frame, chunks[3]);
+
+    if app.show_help {
+        render_help_modal(app, frame, size);
+    }
 }
 
 fn render_header(app: &App, frame: &mut Frame, area: Rect) {
@@ -151,49 +155,112 @@ fn render_editor(app: &App, frame: &mut Frame, area: Rect) {
     frame.render_widget(&textarea, area);
 }
 
-fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
-    let mut spans = vec![
-        Span::styled("[Ctrl+S: Enviar]  ", Style::default().fg(Color::Green)),
-        Span::styled(
-            "[Ctrl+T: Alternar Foco]  ",
-            Style::default().fg(Color::Yellow),
-        ),
-    ];
+fn render_footer(_app: &App, frame: &mut Frame, area: Rect) {
+    let span = Span::styled(
+        " [Ctrl+H: Ajuda] ",
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    );
+    let paragraph = Paragraph::new(Line::from(vec![span]));
+    frame.render_widget(paragraph, area);
+}
 
-    match app.gost_phase {
-        pult_core::domain::GostPhase::SpecContract => {
-            spans.push(Span::styled(
-                "[Ctrl+P: Aprovar Spec]  ",
+fn render_help_modal(_app: &App, frame: &mut Frame, area: Rect) {
+    let modal_width = 72.min(area.width.saturating_sub(4));
+    let modal_height = 16.min(area.height.saturating_sub(2));
+    let x = (area.width.saturating_sub(modal_width)) / 2;
+    let y = (area.height.saturating_sub(modal_height)) / 2;
+    let popup_area = Rect::new(x, y, modal_width, modal_height);
+
+    frame.render_widget(ratatui::widgets::Clear, popup_area);
+
+    let help_lines = vec![
+        Line::from(vec![
+            Span::styled(
+                "Comando   ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "Atalho   ",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
-            ));
-        }
-        pult_core::domain::GostPhase::CloseTicket => {
-            spans.push(Span::styled(
-                "[Ctrl+G: Fechar]  ",
+            ),
+            Span::styled(
+                "Descrição",
                 Style::default()
-                    .fg(Color::LightMagenta)
+                    .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
-            ));
-            spans.push(Span::styled(
-                "[Ctrl+M: Merge CCCP]  ",
-                Style::default().fg(Color::LightGreen),
-            ));
-        }
-        _ => {
-            spans.push(Span::styled(
-                "[Ctrl+N: Próx. Fase]  ",
-                Style::default().fg(Color::Cyan),
-            ));
-        }
-    }
+            ),
+        ]),
+        Line::from(vec![Span::raw(
+            "────────────────────────────────────────────────────────────",
+        )]),
+        Line::from(vec![
+            Span::styled("/new      ", Style::default().fg(Color::Green)),
+            Span::styled("         ", Style::default().fg(Color::Cyan)),
+            Span::raw("Criar / reiniciar sessão de trabalho"),
+        ]),
+        Line::from(vec![
+            Span::styled("/approve  ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+P   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Aprovar contrato/spec (Fase 3 -> Fase 4)"),
+        ]),
+        Line::from(vec![
+            Span::styled("/next     ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+N   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Avançar para a próxima fase GOST"),
+        ]),
+        Line::from(vec![
+            Span::styled("/finish   ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+G   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Compilar crônica e encerrar ticket"),
+        ]),
+        Line::from(vec![
+            Span::styled("/merge    ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+M   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Executar cccp merge da branch de trabalho"),
+        ]),
+        Line::from(vec![
+            Span::styled("/help     ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+H   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Abrir ou fechar esta janela de ajuda"),
+        ]),
+        Line::from(vec![
+            Span::styled("/quit     ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+Q   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Encerrar o PULT"),
+        ]),
+        Line::from(vec![
+            Span::styled("          ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+T   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Alternar foco (Editor <-> Viewport)"),
+        ]),
+        Line::from(vec![
+            Span::styled("          ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+S   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Enviar prompt do editor"),
+        ]),
+        Line::from(vec![
+            Span::styled("          ", Style::default().fg(Color::Green)),
+            Span::styled("Tab      ", Style::default().fg(Color::Cyan)),
+            Span::raw("Autocompletar comando com barra (/)"),
+        ]),
+        Line::from(vec![
+            Span::styled("          ", Style::default().fg(Color::Green)),
+            Span::styled("Esc      ", Style::default().fg(Color::Cyan)),
+            Span::raw("Fechar modal de ajuda"),
+        ]),
+    ];
 
-    spans.push(Span::styled(
-        "[Ctrl+Q: Sair]",
-        Style::default().fg(Color::Red),
-    ));
+    let block = Block::default()
+        .title(" ☭ Central de Comandos e Atalhos (PULT) ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Yellow));
 
-    let paragraph = Paragraph::new(Line::from(spans));
-    frame.render_widget(paragraph, area);
+    let paragraph = Paragraph::new(help_lines).block(block);
+    frame.render_widget(paragraph, popup_area);
 }

@@ -28,6 +28,7 @@ pub struct App {
     pub busy_label: String,
     pub is_line_open: bool,
     pub session: Arc<Mutex<Option<Session>>>,
+    pub show_help: bool,
 }
 
 impl Default for App {
@@ -66,6 +67,7 @@ impl App {
             busy_label: String::new(),
             is_line_open: false,
             session: Arc::new(Mutex::new(None)),
+            show_help: false,
         }
     }
 
@@ -314,12 +316,56 @@ impl App {
                 }
             }
             crate::event::TuiAction::Submit(text) => Ok(text),
+            crate::event::TuiAction::HelpToggled => Ok("ajuda".into()),
+            crate::event::TuiAction::NewSession => {
+                self.reset_session();
+                self.append_viewport_line("★ [GOST] Nova sessão iniciada.");
+                Ok("nova_sessao".into())
+            }
             crate::event::TuiAction::Quit => {
                 self.quit();
                 Ok("quit".into())
             }
             crate::event::TuiAction::FocusToggled | crate::event::TuiAction::Scrolled => {
                 Ok("navegacao".into())
+            }
+        }
+    }
+
+    /// Executa um comando digitado que se inicia com barra ('/').
+    pub fn execute_slash_command(&mut self, cmd: &str) -> Option<crate::event::TuiAction> {
+        let trimmed = cmd.trim();
+        match trimmed {
+            "/help" => {
+                self.show_help = !self.show_help;
+                Some(crate::event::TuiAction::HelpToggled)
+            }
+            "/new" => {
+                self.reset_session();
+                self.append_viewport_line("★ [GOST] Nova sessão iniciada.");
+                Some(crate::event::TuiAction::NewSession)
+            }
+            "/approve" => Some(crate::event::TuiAction::SpecApproved),
+            "/next" => {
+                if let Ok(next) = self.advance_gost_phase() {
+                    Some(crate::event::TuiAction::PhaseAdvanced(next))
+                } else {
+                    self.append_viewport_line("⚠ Não há próxima fase disponível.");
+                    None
+                }
+            }
+            "/finish" => Some(crate::event::TuiAction::FinishTriggered),
+            "/merge" => Some(crate::event::TuiAction::MergeTriggered),
+            "/quit" => {
+                self.quit();
+                Some(crate::event::TuiAction::Quit)
+            }
+            _ => {
+                self.append_viewport_line(&format!(
+                    "⚠ Comando desconhecido: '{}'. Digite /help para ver os comandos disponíveis.",
+                    trimmed
+                ));
+                None
             }
         }
     }
@@ -431,4 +477,34 @@ pub fn infer_ticket_from_branch(branch: &str) -> Option<u32> {
     };
     let token = after_slash.split('-').next()?;
     token.parse::<u32>().ok()
+}
+
+pub const SLASH_COMMANDS: &[&str] = &[
+    "/new",
+    "/approve",
+    "/next",
+    "/finish",
+    "/merge",
+    "/quit",
+    "/help",
+];
+
+/// Autocompleta comandos iniciados por barra ('/').
+pub fn autocomplete_slash_command(prefix: &str) -> Option<&'static str> {
+    let trimmed = prefix.trim();
+    if !trimmed.starts_with('/') {
+        return None;
+    }
+    if trimmed == "/n" || trimmed == "/ne" {
+        return Some("/new");
+    }
+    let matches: Vec<&&str> = SLASH_COMMANDS
+        .iter()
+        .filter(|cmd| cmd.starts_with(trimmed))
+        .collect();
+    if matches.len() == 1 {
+        Some(*matches[0])
+    } else {
+        None
+    }
 }

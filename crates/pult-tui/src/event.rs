@@ -14,14 +14,25 @@ pub enum TuiAction {
     PhaseAdvanced(GostPhase),
     FinishTriggered,
     MergeTriggered,
+    HelpToggled,
+    NewSession,
 }
 
 pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
+    if key.code == KeyCode::Esc && app.show_help {
+        app.show_help = false;
+        return Some(TuiAction::HelpToggled);
+    }
+
     if key.modifiers.contains(KeyModifiers::CONTROL) {
         match key.code {
             KeyCode::Char('q') | KeyCode::Char('c') => {
                 app.quit();
                 return Some(TuiAction::Quit);
+            }
+            KeyCode::Char('h') => {
+                app.show_help = !app.show_help;
+                return Some(TuiAction::HelpToggled);
             }
             KeyCode::Char('t') => {
                 app.toggle_focus();
@@ -29,6 +40,9 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
             }
             KeyCode::Char('s') => {
                 if let Some(content) = app.submit_input() {
+                    if content.trim_start().starts_with('/') {
+                        return app.execute_slash_command(content.trim());
+                    }
                     return Some(TuiAction::Submit(content));
                 }
                 return None;
@@ -57,6 +71,22 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
                 return Some(TuiAction::MergeTriggered);
             }
             _ => {}
+        }
+    }
+
+    // Autocomplete com Tab quando o editor começa com '/'
+    if app.focus == Focus::Editor && key.code == KeyCode::Tab {
+        let lines = app.textarea.lines();
+        if let Some(first_line) = lines.first() {
+            let trimmed = first_line.trim_start();
+            if trimmed.starts_with('/') {
+                if let Some(completed) = crate::app::autocomplete_slash_command(trimmed) {
+                    let mut ta = tui_textarea::TextArea::from([completed.to_string()]);
+                    ta.set_cursor_line_style(ratatui::style::Style::default());
+                    app.textarea = ta;
+                    return None;
+                }
+            }
         }
     }
 

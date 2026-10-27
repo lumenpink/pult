@@ -196,9 +196,11 @@ async fn run_loop<B: ratatui::backend::Backend>(
                         TuiAction::SpecApproved
                         | TuiAction::PhaseAdvanced(_)
                         | TuiAction::FinishTriggered
-                        | TuiAction::MergeTriggered => {
+                        | TuiAction::MergeTriggered
+                        | TuiAction::NewSession => {
                             let _ = app.execute_action(action, &git_driver);
                         }
+                        TuiAction::HelpToggled => {}
                         TuiAction::Quit => {
                             app.quit();
                         }

@@ -100,18 +100,18 @@ fn test_render_footer_contextual_action_buttons() {
 
     let mut app = App::new();
 
-    // Na Fase 3: deve exibir atalho de aprovação de spec
+    // Rodapé minimalista exibe exclusivamente [Ctrl+H: Ajuda]
     app.set_gost_phase(GostPhase::SpecContract);
     terminal.draw(|f| render(&app, f)).unwrap();
     let content_p3 = format!("{:?}", terminal.backend().buffer());
-    assert!(content_p3.contains("Ctrl+P: Aprovar Spec"));
+    assert!(content_p3.contains("Ctrl+H: Ajuda"));
 
-    // Na Fase 9: deve exibir atalho de fechamento
+    // Na Fase 9 também permanece limpo e consistente
     app.set_gost_phase(GostPhase::CloseTicket);
     terminal.draw(|f| render(&app, f)).unwrap();
     let content_p9 = format!("{:?}", terminal.backend().buffer());
-    assert!(content_p9.contains("Ctrl+G: Fechar"));
-    assert!(content_p9.contains("Ctrl+M: Merge CCCP"));
+    assert!(content_p9.contains("Ctrl+H: Ajuda"));
+    assert!(!content_p9.contains("Ctrl+M: Merge CCCP"));
 }
 
 #[test]
