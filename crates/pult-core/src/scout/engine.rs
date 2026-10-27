@@ -137,4 +137,88 @@ impl ScoutEngine {
             Err(e) => Err(e),
         }
     }
+
+    /// Gera um slug semântico em formato kebab-case com no máximo 60 caracteres.
+    /// Se o Ollama estiver acessível, solicita ao modelo local uma síntese concisa.
+    /// Caso contrário, executa fallback determinístico algorítmico.
+    pub async fn generate_session_slug(&self, input_text: &str) -> String {
+        let trimmed = input_text.trim();
+        if !trimmed.chars().any(|c| c.is_alphanumeric()) {
+            return "sessao-trabalho".to_string();
+        }
+
+        let prompt = format!(
+            "Resuma o seguinte objetivo de software em exatamente uma frase curta no formato kebab-case (apenas letras minúsculas a-z, números 0-9 e hífens), sem pontuação, sem acentos, com no máximo 50 caracteres:\n{}\nResponda APENAS com o slug em kebab-case, nada mais.",
+            trimmed
+        );
+
+        if let Ok(resp) = self.client.generate(&self.model_name, &prompt).await {
+            let clean = sanitize_kebab_slug(&resp);
+            if !clean.is_empty() && clean != "sessao-trabalho" {
+                return clean;
+            }
+        }
+
+        sanitize_kebab_slug(trimmed)
+    }
+}
+
+pub fn sanitize_kebab_slug(input: &str) -> String {
+    let mut mapped = String::with_capacity(input.len());
+    for ch in input.chars() {
+        let ch_lower = ch.to_ascii_lowercase();
+        match ch {
+            'á' | 'à' | 'ã' | 'â' | 'ä' => mapped.push('a'),
+            'é' | 'è' | 'ê' | 'ë' => mapped.push('e'),
+            'í' | 'ì' | 'î' | 'ï' => mapped.push('i'),
+            'ó' | 'ò' | 'õ' | 'ô' | 'ö' => mapped.push('o'),
+            'ú' | 'ù' | 'û' | 'ü' => mapped.push('u'),
+            'ç' => mapped.push('c'),
+            'ñ' => mapped.push('n'),
+            _ => {
+                if ch_lower.is_ascii_alphanumeric() {
+                    mapped.push(ch_lower);
+                } else {
+                    mapped.push('-');
+                }
+            }
+        }
+    }
+
+    // Comprime hífens consecutivos
+    let mut clean = String::with_capacity(mapped.len());
+    let mut last_was_dash = false;
+    for ch in mapped.chars() {
+        if ch == '-' {
+            if !last_was_dash {
+                clean.push('-');
+                last_was_dash = true;
+            }
+        } else {
+            clean.push(ch);
+            last_was_dash = false;
+        }
+    }
+
+    let trimmed = clean.trim_matches('-');
+    if trimmed.is_empty() {
+        return "sessao-trabalho".to_string();
+    }
+
+    if trimmed.len() <= 60 {
+        return trimmed.to_string();
+    }
+
+    let slice = &trimmed[..60];
+    let candidate = match slice.rfind('-') {
+        Some(idx) if idx >= 20 => &slice[..idx],
+        _ => slice,
+    };
+
+    let result = candidate.trim_matches('-');
+    if result.is_empty() {
+        "sessao-trabalho".to_string()
+    } else {
+        result.to_string()
+    }
 }

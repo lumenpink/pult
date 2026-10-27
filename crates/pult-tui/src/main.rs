@@ -379,12 +379,14 @@ async fn run_orchestration_pipeline(
     let storage_dir = repo_dir.join(".antigravity/pult/sessions");
     let storage = pult_core::FileSessionStorage::new(&storage_dir);
 
+    let session_slug = scout.generate_session_slug(&prompt).await;
+
     let (turn_number, session_id, save_err) = {
         let mut guard = session_arc.lock().unwrap();
         if guard.is_none() {
             let new_session = match ticket_id {
-                Some(id) => pult_core::Session::new_formal(id, &branch_name, &branch_name),
-                None => pult_core::Session::new_draft(&prompt),
+                Some(id) => pult_core::Session::new_formal(id, &session_slug, &branch_name),
+                None => pult_core::Session::new_draft(&session_slug),
             };
             *guard = Some(new_session);
         }
