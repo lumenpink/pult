@@ -28,3 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `crates/pult-core` & `crates/pult-tui`: Persistência contínua multi-turnos ao longo da conversa com streaming incremental em disco e resiliência a interrupções (closes #16).
 - `crates/pult-tui`: Detecção dinâmica de branch via Git, inferência determinística de ticket_id e suporte à retomada de sessões via flag `--resume`/`-s` (closes #17).
 - `crates/pult-tui` & `crates/pult-core`: Conexão dos atalhos contextuais GOST (Ctrl+P, Ctrl+N, Ctrl+G, Ctrl+M) no loop de eventos, validação de veto da Fase 3 e fechamento automático de tickets (closes #18).
+- `crates/pult-tui`: Rodapé minimalista com atalho único Ctrl+H, modal flutuante de ajuda central de comandos, interpretador de comandos com barra (/new, /approve, /next, etc.) e autocomplete inteligente (closes #19).
