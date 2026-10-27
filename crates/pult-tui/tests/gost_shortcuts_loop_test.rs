@@ -160,3 +160,83 @@ fn test_execute_action_finish_and_merge() {
     assert!(res_merge.is_ok());
     assert!(merged_flag.load(Ordering::SeqCst));
 }
+
+#[test]
+fn test_mutation_shortcuts_invalid_phases_and_merge_failure() {
+    let mut app = App::new();
+    app.set_gost_phase(GostPhase::Ticket);
+
+    struct FailingMergeDriver;
+    impl RepoDriver for FailingMergeDriver {
+        fn current_branch(&self) -> Result<String, DriverError> {
+            Ok("main".into())
+        }
+        fn checkout_branch(&self, _b: &str, _c: bool) -> Result<(), DriverError> {
+            Ok(())
+        }
+        fn status(&self) -> Result<GitStatus, DriverError> {
+            Ok(GitStatus {
+                branch: "main".into(),
+                is_clean: true,
+                modified_files: Vec::new(),
+                untracked_files: Vec::new(),
+            })
+        }
+        fn check_strict(&self) -> Result<QualityAudit, DriverError> {
+            Ok(QualityAudit {
+                passed: true,
+                total_checks: 9,
+                conforming: 9,
+                warnings: 0,
+                failures: 0,
+                compliance_index: "100%".into(),
+            })
+        }
+        fn format_commit_message(
+            &self,
+            _p: GostPhase,
+            _t: u32,
+            _s: Option<&str>,
+            _sub: &str,
+            _b: Option<&str>,
+        ) -> Result<String, DriverError> {
+            Ok("msg".into())
+        }
+        fn validate_phase_diff(&self, _p: GostPhase) -> Result<(), DriverError> {
+            Ok(())
+        }
+        fn commit_phase(
+            &self,
+            _p: GostPhase,
+            _t: u32,
+            _s: Option<&str>,
+            _sub: &str,
+            _b: Option<&str>,
+        ) -> Result<String, DriverError> {
+            Ok("msg".into())
+        }
+        fn merge_branch(&self, branch: &str) -> Result<(), DriverError> {
+            Err(DriverError::CommandFailed {
+                command: "cccp merge".into(),
+                exit_code: Some(1),
+                stderr: format!("conflito ao mesclar {}", branch),
+            })
+        }
+        fn close_ticket(&self, _id: u32) -> Result<(), DriverError> {
+            Ok(())
+        }
+    }
+
+    let driver = FailingMergeDriver;
+
+    // Mutante 1: Aprovar spec fora da Fase 3
+    let res_spec = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(res_spec.is_err());
+    assert_eq!(app.phase(), GostPhase::Ticket);
+
+    // Mutante 2: Falha no merge é tratada e gera erro no retorno e viewport
+    let res_merge = app.execute_action(TuiAction::MergeTriggered, &driver);
+    assert!(res_merge.is_err());
+    let vp_text = app.viewport_lines.join("\n");
+    assert!(vp_text.contains("Falha ao mesclar"));
+}
