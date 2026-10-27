@@ -201,26 +201,19 @@ async fn run_loop<B: ratatui::backend::Backend>(
                                 app.append_viewport_line(&format!("> {}", text));
                                 app.set_busy(true, "Iniciando...");
 
-                                let tx = pipeline_tx.clone();
-                                let repo = app.repo_path.clone();
-                                let tid = app.ticket_id;
-                                let branch = app.branch_name.clone();
-                                let session_arc = app.session.clone();
-                                let audit = audit_logger.clone();
-                                let phase = app.gost_phase;
+                                let ctx = PipelineContext {
+                                    prompt: text,
+                                    repo_dir: app.repo_path.clone(),
+                                    ticket_id: app.ticket_id,
+                                    branch_name: app.branch_name.clone(),
+                                    phase: app.gost_phase,
+                                    session_arc: app.session.clone(),
+                                    audit: audit_logger.clone(),
+                                    tx: pipeline_tx.clone(),
+                                };
 
                                 tokio::spawn(async move {
-                                    run_orchestration_pipeline(
-                                        text,
-                                        repo,
-                                        tid,
-                                        branch,
-                                        phase,
-                                        session_arc,
-                                        audit,
-                                        tx,
-                                    )
-                                    .await;
+                                    run_orchestration_pipeline(ctx).await;
                                 });
                             }
                         }
@@ -245,7 +238,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
     Ok(())
 }
 
-async fn run_orchestration_pipeline(
+struct PipelineContext {
     prompt: String,
     repo_dir: PathBuf,
     ticket_id: Option<u32>,
@@ -254,7 +247,19 @@ async fn run_orchestration_pipeline(
     session_arc: std::sync::Arc<std::sync::Mutex<Option<pult_core::Session>>>,
     audit: Option<std::sync::Arc<pult_core::AuditLogger>>,
     tx: mpsc::Sender<PipelineEvent>,
-) {
+}
+
+async fn run_orchestration_pipeline(ctx: PipelineContext) {
+    let PipelineContext {
+        prompt,
+        repo_dir,
+        ticket_id,
+        branch_name,
+        phase,
+        session_arc,
+        audit,
+        tx,
+    } = ctx;
     if (branch_name == "main" || branch_name == "master")
         && phase >= pult_core::GostPhase::SpecContract
     {
