@@ -235,6 +235,31 @@ async fn run_loop<B: ratatui::backend::Backend>(
                         | TuiAction::BranchChanged(_)
                         | TuiAction::NewSession => {
                             let _ = app.execute_action(action, &git_driver);
+
+                            if let Some(auto_prompt) = app.take_pending_dispatch() {
+                                if !app.is_busy {
+                                    app.set_busy(true, "Iniciando pipeline...");
+                                    let repo_dir = app.repo_path.clone();
+                                    let ticket_id = app.ticket_id;
+                                    let branch_name = app.branch_name.clone();
+                                    let phase = app.gost_phase;
+
+                                    let ctx = PipelineContext {
+                                        prompt: auto_prompt,
+                                        repo_dir,
+                                        ticket_id,
+                                        branch_name,
+                                        phase,
+                                        session_arc: app.session.clone(),
+                                        audit: audit_logger.clone(),
+                                        tx: pipeline_tx.clone(),
+                                    };
+
+                                    tokio::spawn(async move {
+                                        run_orchestration_pipeline(ctx).await;
+                                    });
+                                }
+                            }
                         }
                         TuiAction::HelpToggled => {}
                         TuiAction::Quit => {

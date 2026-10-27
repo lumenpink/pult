@@ -135,30 +135,29 @@ fn test_universal_approve_through_all_phases() {
     assert!(res.is_ok(), "Phase 4 approve failed: {:?}", res);
     assert_eq!(app.phase(), GostPhase::GreenCode);
 
-    // Phase 5 -> Phase 6 (deve commitar ph5)
+    // Phase 5 approve: comita ph5 e encadeia autonomamente 6, 7 e 8 até 9 (CloseTicket)
     let res = app.execute_action(TuiAction::SpecApproved, &driver);
     assert!(res.is_ok(), "Phase 5 approve failed: {:?}", res);
-    assert_eq!(app.phase(), GostPhase::Refactor);
-
-    // Phase 6 -> Phase 7
-    let res = app.execute_action(TuiAction::SpecApproved, &driver);
-    assert!(res.is_ok(), "Phase 6 approve failed: {:?}", res);
-    assert_eq!(app.phase(), GostPhase::MutationTest);
-
-    // Phase 7 -> Phase 8
-    let res = app.execute_action(TuiAction::SpecApproved, &driver);
-    assert!(res.is_ok(), "Phase 7 approve failed: {:?}", res);
-    assert_eq!(app.phase(), GostPhase::QualityGate);
-
-    // Phase 8 -> Phase 9 (com 0 falhas, deve avançar)
-    let res = app.execute_action(TuiAction::SpecApproved, &driver);
-    assert!(res.is_ok(), "Phase 8 approve failed: {:?}", res);
     assert_eq!(app.phase(), GostPhase::CloseTicket);
 
     // Phase 9 -> Close (deve commitar ph9 e fechar ticket)
     let res = app.execute_action(TuiAction::SpecApproved, &driver);
     assert!(res.is_ok(), "Phase 9 approve failed: {:?}", res);
     assert!(ticket_closed.load(Ordering::SeqCst));
+
+    // Validação de transições manuais isoladas para as fases técnicas 6, 7 e 8
+    app.set_gost_phase(GostPhase::Refactor);
+    let res = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(res.is_ok());
+    assert_eq!(app.phase(), GostPhase::MutationTest);
+
+    let res = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(res.is_ok());
+    assert_eq!(app.phase(), GostPhase::QualityGate);
+
+    let res = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(res.is_ok());
+    assert_eq!(app.phase(), GostPhase::CloseTicket);
 
     let commits = committed.lock().unwrap();
     assert_eq!(
