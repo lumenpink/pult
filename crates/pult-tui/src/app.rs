@@ -971,6 +971,12 @@ impl App {
         self.is_auto_mode
     }
 
+    pub fn should_auto_advance_on_completed(&self) -> bool {
+        self.is_auto_mode
+            && self.gost_phase >= GostPhase::SpecContract
+            && self.gost_phase < GostPhase::CloseTicket
+    }
+
     pub fn submit_input(&mut self) -> Option<String> {
         if self.is_busy {
             return None;

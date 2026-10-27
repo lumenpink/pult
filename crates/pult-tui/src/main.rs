@@ -193,6 +193,43 @@ async fn run_loop<B: ratatui::backend::Backend>(
                         code
                     ));
                     app.set_busy(false, "");
+
+                    if code == 0 && app.should_auto_advance_on_completed() {
+                        let git_driver = pult_core::CccpGitDriver::new(&app.repo_path);
+                        match app.execute_action(TuiAction::SpecApproved, &git_driver) {
+                            Ok(msg) => {
+                                app.append_viewport_line(&format!("★ [AUTO] {}", msg));
+                                if let Some(auto_prompt) = app.take_pending_dispatch() {
+                                    app.set_busy(true, "Iniciando pipeline auto...");
+                                    let repo_dir = app.repo_path.clone();
+                                    let ticket_id = app.ticket_id;
+                                    let branch_name = app.branch_name.clone();
+                                    let phase = app.gost_phase;
+
+                                    let ctx = PipelineContext {
+                                        prompt: auto_prompt,
+                                        repo_dir,
+                                        ticket_id,
+                                        branch_name,
+                                        phase,
+                                        session_arc: app.session.clone(),
+                                        audit: audit_logger.clone(),
+                                        tx: pipeline_tx.clone(),
+                                    };
+
+                                    tokio::spawn(async move {
+                                        run_orchestration_pipeline(ctx).await;
+                                    });
+                                }
+                            }
+                            Err(e) => {
+                                app.append_viewport_line(&format!(
+                                    "⚠ [AUTO] Esteira pausada por bloqueio/erro: {}",
+                                    e
+                                ));
+                            }
+                        }
+                    }
                 }
                 PipelineEvent::Failed(err) => {
                     app.append_viewport_line(&format!("  ❌ [4/4] Erro na execução: {}", err));
