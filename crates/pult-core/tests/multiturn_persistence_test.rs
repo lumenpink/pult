@@ -40,7 +40,10 @@ fn test_multiturn_continuous_persistence_and_streaming() {
     // Valida que o arquivo em disco já contém o streaming parcial
     let loaded_partial = storage.load(&session.metadata.session_id).expect("load partial");
     assert_eq!(loaded_partial.turns.len(), 2);
-    assert_eq!(loaded_partial.turns[1].content, "Aqui está o rascunho da especificação.\n");
+    assert_eq!(
+        loaded_partial.turns[1].content,
+        "Aqui está o rascunho da especificação."
+    );
     assert_eq!(loaded_partial.turns[1].status, TurnStatus::InProgress);
 
     // 5. Agente conclui com sucesso

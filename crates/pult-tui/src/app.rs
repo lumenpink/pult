@@ -1,4 +1,6 @@
 use pult_core::domain::GostPhase;
+use pult_core::Session;
+use std::sync::{Arc, Mutex};
 use tui_textarea::TextArea;
 
 /// Painel que detém o foco ativo do teclado.
@@ -25,6 +27,7 @@ pub struct App {
     pub spinner_idx: usize,
     pub busy_label: String,
     pub is_line_open: bool,
+    pub session: Arc<Mutex<Option<Session>>>,
 }
 
 impl Default for App {
@@ -62,7 +65,27 @@ impl App {
             spinner_idx: 0,
             busy_label: String::new(),
             is_line_open: false,
+            session: Arc::new(Mutex::new(None)),
         }
+    }
+
+    pub fn reset_session(&self) {
+        if let Ok(mut lock) = self.session.lock() {
+            *lock = None;
+        }
+    }
+
+    pub fn set_session(&self, session: Session) {
+        if let Ok(mut lock) = self.session.lock() {
+            *lock = Some(session);
+        }
+    }
+
+    pub fn session_id(&self) -> Option<String> {
+        self.session
+            .lock()
+            .ok()
+            .and_then(|guard| guard.as_ref().map(|s| s.metadata.session_id.clone()))
     }
 
     pub fn phase(&self) -> GostPhase {

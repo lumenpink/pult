@@ -247,6 +247,44 @@ impl Session {
 
         Ok(Self { metadata, turns })
     }
+
+    /// Adiciona um novo turno sequencial à sessão, calculando automaticamente seu número.
+    pub fn add_turn(&mut self, actor: Actor, content: String, status: TurnStatus) -> &mut Turn {
+        let turn_number = self.turns.len() + 1;
+        let now_sec = current_epoch_seconds();
+        let timestamp = epoch_to_iso(now_sec);
+        self.metadata.updated_at = timestamp.clone();
+
+        self.turns.push(Turn {
+            turn_number,
+            actor,
+            timestamp,
+            content,
+            status,
+            tokens: None,
+            tokens_out: None,
+        });
+
+        self.turns.last_mut().expect("turno recém adicionado")
+    }
+
+    /// Acrescenta dados incrementais ao conteúdo do último turno (útil para streaming).
+    pub fn append_to_last_turn(&mut self, chunk: &str) {
+        if let Some(last_turn) = self.turns.last_mut() {
+            last_turn.content.push_str(chunk);
+            let now_sec = current_epoch_seconds();
+            self.metadata.updated_at = epoch_to_iso(now_sec);
+        }
+    }
+
+    /// Atualiza o status do último turno e o timestamp de atualização da sessão.
+    pub fn update_last_turn_status(&mut self, status: TurnStatus) {
+        if let Some(last_turn) = self.turns.last_mut() {
+            last_turn.status = status;
+            let now_sec = current_epoch_seconds();
+            self.metadata.updated_at = epoch_to_iso(now_sec);
+        }
+    }
 }
 
 fn parse_markdown_turns(body: &str) -> Vec<Turn> {

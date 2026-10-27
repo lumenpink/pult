@@ -136,9 +136,11 @@ async fn run_loop<B: ratatui::backend::Backend>(
                         let repo = app.repo_path.clone();
                         let tid = app.ticket_id;
                         let branch = app.branch_name.clone();
+                        let session_arc = app.session.clone();
 
                         tokio::spawn(async move {
-                            run_orchestration_pipeline(text, repo, tid, branch, tx).await;
+                            run_orchestration_pipeline(text, repo, tid, branch, session_arc, tx)
+                                .await;
                         });
                     }
                 }
@@ -153,6 +155,7 @@ async fn run_orchestration_pipeline(
     repo_dir: PathBuf,
     ticket_id: Option<u32>,
     branch_name: String,
+    session_arc: std::sync::Arc<std::sync::Mutex<Option<pult_core::Session>>>,
     tx: mpsc::Sender<PipelineEvent>,
 ) {
     // 1. Extração Estrutural de AST Poliglota
@@ -246,36 +249,43 @@ async fn run_orchestration_pipeline(
 
     let storage_dir = repo_dir.join(".antigravity/pult/sessions");
     let storage = pult_core::FileSessionStorage::new(&storage_dir);
-    let mut session = match ticket_id {
-        Some(id) => pult_core::Session::new_formal(id, &branch_name, &branch_name),
-        None => pult_core::Session::new_draft(&prompt),
+
+    let (turn_number, session_id, save_err) = {
+        let mut guard = session_arc.lock().unwrap();
+        if guard.is_none() {
+            let new_session = match ticket_id {
+                Some(id) => pult_core::Session::new_formal(id, &branch_name, &branch_name),
+                None => pult_core::Session::new_draft(&prompt),
+            };
+            *guard = Some(new_session);
+        }
+        let sess = guard.as_mut().unwrap();
+        let user_turn = sess.add_turn(
+            pult_core::Actor::User,
+            prompt.clone(),
+            pult_core::TurnStatus::Completed,
+        );
+        let turn_num = user_turn.turn_number;
+        let sid = sess.metadata.session_id.clone();
+        let err = storage.save(sess).err().map(|e| e.to_string());
+        (turn_num, sid, err)
     };
 
-    let user_turn = pult_core::Turn {
-        turn_number: 1,
-        actor: pult_core::Actor::User,
-        timestamp: "agora".to_string(),
-        content: prompt.clone(),
-        status: pult_core::TurnStatus::Completed,
-        tokens: None,
-        tokens_out: None,
-    };
-    session.turns.push(user_turn);
-    if let Err(e) = storage.save(&session) {
+    if let Some(e) = save_err {
         let _ = tx
             .send(PipelineEvent::Log(format!(
                 "  ⚠ Aviso ao salvar sessão: {}",
                 e
             )))
             .await;
-    } else {
-        let _ = tx
-            .send(PipelineEvent::Log(format!(
-                "  ✓ [3/4] Sessão salva em {}",
-                session.metadata.session_id
-            )))
-            .await;
     }
+
+    let _ = tx
+        .send(PipelineEvent::Log(format!(
+            "  ✓ [3/4] Turno #{} salvo na sessão {}",
+            turn_number, session_id
+        )))
+        .await;
 
     // 4. Execução do Agente Externo (agy)
     let _ = tx
@@ -286,6 +296,19 @@ async fn run_orchestration_pipeline(
             "☭ [PULT] [4/4] Disparando Agente Externo (agy)...".into(),
         ))
         .await;
+
+    // Inicializa turno do Agente em InProgress e persiste imediatamente
+    {
+        let mut guard = session_arc.lock().unwrap();
+        if let Some(sess) = guard.as_mut() {
+            sess.add_turn(
+                pult_core::Actor::Agy,
+                String::new(),
+                pult_core::TurnStatus::InProgress,
+            );
+            let _ = storage.save(sess);
+        }
+    }
 
     let full_prompt = format!("{}{}", prompt, injected_context);
 
@@ -304,12 +327,33 @@ async fn run_orchestration_pipeline(
             while let Some(event) = stream_rx.recv().await {
                 match event {
                     pult_core::AgyStreamEvent::StdoutChunk(chunk) => {
+                        {
+                            let mut guard = session_arc.lock().unwrap();
+                            if let Some(sess) = guard.as_mut() {
+                                sess.append_to_last_turn(&chunk);
+                                let _ = storage.save(sess);
+                            }
+                        }
                         let _ = tx.send(PipelineEvent::Chunk(chunk)).await;
                     }
                     pult_core::AgyStreamEvent::StderrChunk(chunk) => {
+                        {
+                            let mut guard = session_arc.lock().unwrap();
+                            if let Some(sess) = guard.as_mut() {
+                                sess.append_to_last_turn(&chunk);
+                                let _ = storage.save(sess);
+                            }
+                        }
                         let _ = tx.send(PipelineEvent::Chunk(chunk)).await;
                     }
                     pult_core::AgyStreamEvent::Truncated => {
+                        {
+                            let mut guard = session_arc.lock().unwrap();
+                            if let Some(sess) = guard.as_mut() {
+                                sess.update_last_turn_status(pult_core::TurnStatus::Truncated);
+                                let _ = storage.save(sess);
+                            }
+                        }
                         let _ = tx
                             .send(PipelineEvent::Log(
                                 "  ⚠ Aviso: Saída truncada pelo agente.".into(),
@@ -317,10 +361,24 @@ async fn run_orchestration_pipeline(
                             .await;
                     }
                     pult_core::AgyStreamEvent::Completed { exit_code } => {
+                        {
+                            let mut guard = session_arc.lock().unwrap();
+                            if let Some(sess) = guard.as_mut() {
+                                sess.update_last_turn_status(pult_core::TurnStatus::Completed);
+                                let _ = storage.save(sess);
+                            }
+                        }
                         let _ = tx.send(PipelineEvent::Completed(exit_code)).await;
                         break;
                     }
                     pult_core::AgyStreamEvent::Error(err) => {
+                        {
+                            let mut guard = session_arc.lock().unwrap();
+                            if let Some(sess) = guard.as_mut() {
+                                sess.update_last_turn_status(pult_core::TurnStatus::Interrupted);
+                                let _ = storage.save(sess);
+                            }
+                        }
                         let _ = tx.send(PipelineEvent::Failed(err)).await;
                         break;
                     }
@@ -329,6 +387,13 @@ async fn run_orchestration_pipeline(
             let _ = child_handle.await;
         }
         Err(e) => {
+            {
+                let mut guard = session_arc.lock().unwrap();
+                if let Some(sess) = guard.as_mut() {
+                    sess.update_last_turn_status(pult_core::TurnStatus::Interrupted);
+                    let _ = storage.save(sess);
+                }
+            }
             let _ = tx
                 .send(PipelineEvent::Failed(format!(
                     "Falha ao iniciar processo agy: {}",
