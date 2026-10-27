@@ -1052,6 +1052,7 @@ dependencies = [
  "crossterm",
  "pult-core",
  "ratatui",
+ "tempfile",
  "tokio",
  "tui-textarea",
 ]
