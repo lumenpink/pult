@@ -207,6 +207,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
                                 let branch = app.branch_name.clone();
                                 let session_arc = app.session.clone();
                                 let audit = audit_logger.clone();
+                                let phase = app.gost_phase;
 
                                 tokio::spawn(async move {
                                     run_orchestration_pipeline(
@@ -214,6 +215,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
                                         repo,
                                         tid,
                                         branch,
+                                        phase,
                                         session_arc,
                                         audit,
                                         tx,
@@ -226,6 +228,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
                         | TuiAction::PhaseAdvanced(_)
                         | TuiAction::FinishTriggered
                         | TuiAction::MergeTriggered
+                        | TuiAction::BranchChanged(_)
                         | TuiAction::NewSession => {
                             let _ = app.execute_action(action, &git_driver);
                         }
@@ -247,10 +250,27 @@ async fn run_orchestration_pipeline(
     repo_dir: PathBuf,
     ticket_id: Option<u32>,
     branch_name: String,
+    phase: pult_core::GostPhase,
     session_arc: std::sync::Arc<std::sync::Mutex<Option<pult_core::Session>>>,
     audit: Option<std::sync::Arc<pult_core::AuditLogger>>,
     tx: mpsc::Sender<PipelineEvent>,
 ) {
+    if (branch_name == "main" || branch_name == "master")
+        && phase >= pult_core::GostPhase::SpecContract
+    {
+        let msg = format!(
+            "❌ [PULT] Operação abortada: Proibido modificar arquivos diretamente na branch '{}'. Crie uma branch de trabalho antes de avançar para a Fase {}.",
+            branch_name,
+            phase.number()
+        );
+        let _ = tx.send(PipelineEvent::Log(msg.clone())).await;
+        let _ = tx.send(PipelineEvent::Failed(msg.clone())).await;
+        if let Some(ref l) = audit {
+            l.log("GUARD_VETO", &msg);
+        }
+        return;
+    }
+
     if let Some(ref l) = audit {
         l.log("USER_INPUT", &format!("Prompt recebido: {}", prompt));
     }
@@ -448,7 +468,8 @@ async fn run_orchestration_pipeline(
         }
     }
 
-    let full_prompt = format!("{}{}", prompt, injected_context);
+    let directive = phase.agent_directive(&branch_name);
+    let full_prompt = format!("{}\n\n{}{}", directive, prompt, injected_context);
 
     if let Some(ref l) = audit {
         l.log(
@@ -464,7 +485,7 @@ async fn run_orchestration_pipeline(
             full_prompt,
             "--dangerously-skip-permissions".to_string(),
         ],
-        working_dir: Some(repo_dir),
+        working_dir: Some(repo_dir.clone()),
     });
 
     match runner.spawn() {
@@ -563,6 +584,23 @@ async fn run_orchestration_pipeline(
                     e
                 )))
                 .await;
+        }
+    }
+
+    // 5. Verificação de Conformidade Gosplan
+    let driver = pult_core::CccpGitDriver::new(&repo_dir);
+    if let Ok(audit_info) = driver.check_strict() {
+        let check_msg = format!(
+            "  ★ [CCCP Check] Conformidade: {} (Conformes: {}/{}, Falhas: {}, Avisos: {})",
+            audit_info.compliance_index,
+            audit_info.conforming,
+            audit_info.total_checks,
+            audit_info.failures,
+            audit_info.warnings
+        );
+        let _ = tx.send(PipelineEvent::Log(check_msg.clone())).await;
+        if let Some(ref l) = audit {
+            l.log("QUALITY_AUDIT", &check_msg);
         }
     }
 }

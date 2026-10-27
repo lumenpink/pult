@@ -16,6 +16,7 @@ pub enum TuiAction {
     MergeTriggered,
     HelpToggled,
     NewSession,
+    BranchChanged(String),
 }
 
 pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {

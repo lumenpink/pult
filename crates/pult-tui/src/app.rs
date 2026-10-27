@@ -229,6 +229,18 @@ impl App {
 
                 // Obtém status de arquivos modificados via driver
                 let status = driver.status().map_err(|e| e.to_string())?;
+                let effective_branch = if !status.branch.is_empty() {
+                    status.branch.as_str()
+                } else {
+                    self.branch_name.as_str()
+                };
+
+                if effective_branch == "main" || effective_branch == "master" {
+                    let err_msg = "Bloqueio de Governança: Não é permitido operar as Fases 3 a 9 na branch main/master. Crie uma branch de trabalho primeiro com /branch <nome>.".to_string();
+                    self.append_viewport_line(&format!("❌ {}", err_msg));
+                    return Err(err_msg);
+                }
+
                 let file_refs: Vec<&str> = status
                     .modified_files
                     .iter()
@@ -249,6 +261,18 @@ impl App {
                         .to_string();
                 self.append_viewport_line(&ok_msg);
 
+                // Avalia conformidade via driver
+                if let Ok(audit_info) = driver.check_strict() {
+                    self.append_viewport_line(&format!(
+                        "★ [GOST Conformidade] cccp check: {} (Conformes: {}/{}, Falhas: {}, Avisos: {})",
+                        audit_info.compliance_index,
+                        audit_info.conforming,
+                        audit_info.total_checks,
+                        audit_info.failures,
+                        audit_info.warnings
+                    ));
+                }
+
                 // Sincroniza metadados da sessão ativa
                 if let Ok(mut lock) = self.session.lock() {
                     if let Some(ref mut sess) = *lock {
@@ -259,6 +283,24 @@ impl App {
                 Ok(ok_msg)
             }
             crate::event::TuiAction::PhaseAdvanced(next) => {
+                let effective_branch = if let Ok(status) = driver.status() {
+                    if !status.branch.is_empty() {
+                        status.branch
+                    } else {
+                        self.branch_name.clone()
+                    }
+                } else {
+                    self.branch_name.clone()
+                };
+
+                if (effective_branch == "main" || effective_branch == "master")
+                    && next >= GostPhase::SpecContract
+                {
+                    let err_msg = "Bloqueio de Governança: Não é permitido operar as Fases 3 a 9 na branch main/master. Crie uma branch de trabalho primeiro com /branch <nome>.".to_string();
+                    self.append_viewport_line(&format!("❌ {}", err_msg));
+                    return Err(err_msg);
+                }
+
                 let msg = format!(
                     "★ [GOST] Avanço para FASE {}: {}.",
                     next.number(),
@@ -266,12 +308,39 @@ impl App {
                 );
                 self.append_viewport_line(&msg);
 
+                // Avalia conformidade via driver
+                if let Ok(audit_info) = driver.check_strict() {
+                    self.append_viewport_line(&format!(
+                        "★ [GOST Conformidade] cccp check: {} (Conformes: {}/{}, Falhas: {}, Avisos: {})",
+                        audit_info.compliance_index,
+                        audit_info.conforming,
+                        audit_info.total_checks,
+                        audit_info.failures,
+                        audit_info.warnings
+                    ));
+                }
+
                 // Sincroniza metadados da sessão ativa
                 if let Ok(mut lock) = self.session.lock() {
                     if let Some(ref mut sess) = *lock {
                         sess.metadata.gost.phase = next.number();
                     }
                 }
+                Ok(msg)
+            }
+            crate::event::TuiAction::BranchChanged(new_branch) => {
+                driver
+                    .checkout_branch(&new_branch, true)
+                    .map_err(|e| e.to_string())?;
+                self.branch_name = new_branch.clone();
+                if let Some(tid) = infer_ticket_from_branch(&new_branch) {
+                    self.ticket_id = Some(tid);
+                }
+                let msg = format!(
+                    "✓ Alternado para a branch '{}' (Ticket: {:?}).",
+                    new_branch, self.ticket_id
+                );
+                self.append_viewport_line(&msg);
                 Ok(msg)
             }
             crate::event::TuiAction::FinishTriggered => {
@@ -335,6 +404,16 @@ impl App {
     /// Executa um comando digitado que se inicia com barra ('/').
     pub fn execute_slash_command(&mut self, cmd: &str) -> Option<crate::event::TuiAction> {
         let trimmed = cmd.trim();
+        if trimmed.starts_with("/branch") {
+            let parts: Vec<&str> = trimmed.split_whitespace().collect();
+            if parts.len() < 2 {
+                self.append_viewport_line("⚠ Uso correto: /branch <nome-da-branch>");
+                return None;
+            }
+            let branch_target = parts[1].to_string();
+            return Some(crate::event::TuiAction::BranchChanged(branch_target));
+        }
+
         match trimmed {
             "/help" => {
                 self.show_help = !self.show_help;
@@ -480,7 +559,7 @@ pub fn infer_ticket_from_branch(branch: &str) -> Option<u32> {
 }
 
 pub const SLASH_COMMANDS: &[&str] = &[
-    "/new", "/approve", "/next", "/finish", "/merge", "/quit", "/help",
+    "/branch", "/new", "/approve", "/next", "/finish", "/merge", "/quit", "/help",
 ];
 
 /// Autocompleta comandos iniciados por barra ('/').
@@ -488,6 +567,9 @@ pub fn autocomplete_slash_command(prefix: &str) -> Option<&'static str> {
     let trimmed = prefix.trim();
     if !trimmed.starts_with('/') {
         return None;
+    }
+    if trimmed == "/b" || trimmed == "/br" {
+        return Some("/branch");
     }
     if trimmed == "/n" || trimmed == "/ne" {
         return Some("/new");

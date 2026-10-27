@@ -102,4 +102,68 @@ impl GostPhase {
             _ => Err(SessionError::InvalidTransition { from: n, to: n }),
         }
     }
+
+    /// Gera a diretiva normativa a ser injetada no prompt do Agente Externo para a fase ativa.
+    pub fn agent_directive(&self, branch: &str) -> String {
+        let prohibition = "PROIBIÇÃO EXPRESSA: Não execute comandos git ou cccp (commits, tags, merge, branches e fechamento de tickets são de responsabilidade exclusiva da PULT).";
+        match self {
+            Self::Ticket => format!(
+                "★ [DIRETIVA GOST - FASE 1: TICKET/PLANO]\n\
+                 Objetivo: Discutir, formular e planejar o escopo e arquitetura com a usuária.\n\
+                 VETO: Não crie nem modifique nenhum arquivo de código ou de teste nesta fase.\n\
+                 {}",
+                prohibition
+            ),
+            Self::NewBranch => format!(
+                "★ [DIRETIVA GOST - FASE 2: NEW BRANCH]\n\
+                 Objetivo: Definição da branch de trabalho. Aguarde a PULT criar ou alternar a branch.\n\
+                 {}",
+                prohibition
+            ),
+            Self::SpecContract => format!(
+                "★ [DIRETIVA GOST - FASE 3: SPEC & CONTRATO]\n\
+                 Você tem autorização expressa para criar ou modificar APENAS arquivos de especificação em docs/ ou tipos/contratos de domínio na branch '{}'.\n\
+                 VETO: É expressamente proibido criar ou modificar código de produção em src/.\n\
+                 {}",
+                branch, prohibition
+            ),
+            Self::RedTest => format!(
+                "★ [DIRETIVA GOST - FASE 4: RED TEST]\n\
+                 Você tem autorização expressa para criar ou modificar APENAS arquivos de testes automatizados na branch '{}', comprovando a falha inicial (Red).\n\
+                 VETO: Não implemente código de produção nesta fase.\n\
+                 {}",
+                branch, prohibition
+            ),
+            Self::GreenCode => format!(
+                "★ [DIRETIVA GOST - FASE 5: GREEN CODE]\n\
+                 Você tem autorização expressa para implementar a solução mínima em código de produção na branch '{}' para fazer os testes passarem (Green).\n\
+                 {}",
+                branch, prohibition
+            ),
+            Self::Refactor => format!(
+                "★ [DIRETIVA GOST - FASE 6: REFACTOR]\n\
+                 Você tem autorização expressa para refatorar e polir o código na branch '{}', mantendo todos os testes verdes e eliminando avisos de linter.\n\
+                 {}",
+                branch, prohibition
+            ),
+            Self::MutationTest => format!(
+                "★ [DIRETIVA GOST - FASE 7: MUTATION TEST]\n\
+                 Você tem autorização expressa para adicionar testes de mutação e casos de borda na branch '{}' para eliminar mutantes e elevar a cobertura.\n\
+                 {}",
+                branch, prohibition
+            ),
+            Self::QualityGate => format!(
+                "★ [DIRETIVA GOST - FASE 8: QUALITY GATE]\n\
+                 Você tem autorização expressa para ajustes pontuais de formatação e linters na branch '{}' para aprovação no quality gate.\n\
+                 {}",
+                branch, prohibition
+            ),
+            Self::CloseTicket => format!(
+                "★ [DIRETIVA GOST - FASE 9: CLOSE TICKET]\n\
+                 Você tem autorização expressa para atualizar a crônica final e documentação (ex: CHANGELOG.md) na branch '{}'.\n\
+                 {}",
+                branch, prohibition
+            ),
+        }
+    }
 }

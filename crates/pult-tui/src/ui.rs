@@ -200,6 +200,11 @@ fn render_help_modal(_app: &App, frame: &mut Frame, area: Rect) {
             "────────────────────────────────────────────────────────────",
         )]),
         Line::from(vec![
+            Span::styled("/branch   ", Style::default().fg(Color::Green)),
+            Span::styled("         ", Style::default().fg(Color::Cyan)),
+            Span::raw("Criar ou alternar branch (/branch <nome>)"),
+        ]),
+        Line::from(vec![
             Span::styled("/new      ", Style::default().fg(Color::Green)),
             Span::styled("         ", Style::default().fg(Color::Cyan)),
             Span::raw("Criar / reiniciar sessão de trabalho"),
