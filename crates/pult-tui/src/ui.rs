@@ -165,8 +165,12 @@ fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
 }
 
 fn render_diff_modal(app: &App, frame: &mut Frame, area: Rect) {
-    let modal_width = (area.width * 85 / 100).min(area.width.saturating_sub(4)).max(20);
-    let modal_height = (area.height * 80 / 100).min(area.height.saturating_sub(2)).max(10);
+    let modal_width = (area.width * 85 / 100)
+        .min(area.width.saturating_sub(4))
+        .max(20);
+    let modal_height = (area.height * 80 / 100)
+        .min(area.height.saturating_sub(2))
+        .max(10);
     let x = (area.width.saturating_sub(modal_width)) / 2;
     let y = (area.height.saturating_sub(modal_height)) / 2;
     let popup_area = Rect::new(x, y, modal_width, modal_height);
@@ -195,9 +199,13 @@ fn render_diff_modal(app: &App, frame: &mut Frame, area: Rect) {
                 } else if line.starts_with('-') && !line.starts_with("---") {
                     Style::default().fg(Color::Red)
                 } else if line.starts_with("@@") {
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD)
                 } else if line.starts_with("diff --git") || line.starts_with("index ") {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
                 } else if line.starts_with("---") || line.starts_with("+++") {
                     Style::default().fg(Color::LightYellow)
                 } else {

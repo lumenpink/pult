@@ -63,10 +63,18 @@ fn test_repo_driver_diff_stat_and_diff_full() {
     let driver = CccpGitDriver::new(repo_path);
 
     let stat = driver.diff_stat("main").expect("diff_stat deve suceder");
-    assert!(stat.contains("file2.txt"), "diff_stat deve listar file2.txt: {}", stat);
+    assert!(
+        stat.contains("file2.txt"),
+        "diff_stat deve listar file2.txt: {}",
+        stat
+    );
 
     let full = driver.diff_full("main").expect("diff_full deve suceder");
-    assert!(full.contains("+nova linha adicionada"), "diff_full deve conter o diff: {}", full);
+    assert!(
+        full.contains("+nova linha adicionada"),
+        "diff_full deve conter o diff: {}",
+        full
+    );
 }
 
 #[test]
@@ -96,7 +104,11 @@ fn test_phase9_transition_prints_modified_files_and_summary() {
         fn current_branch(&self) -> Result<String, pult_core::driver::DriverError> {
             Ok(self.branch.clone())
         }
-        fn checkout_branch(&self, _branch: &str, _create: bool) -> Result<(), pult_core::driver::DriverError> {
+        fn checkout_branch(
+            &self,
+            _branch: &str,
+            _create: bool,
+        ) -> Result<(), pult_core::driver::DriverError> {
             Ok(())
         }
         fn merge_branch(&self, _branch: &str) -> Result<(), pult_core::driver::DriverError> {
@@ -110,7 +122,9 @@ fn test_phase9_transition_prints_modified_files_and_summary() {
                 untracked_files: Vec::new(),
             })
         }
-        fn check_strict(&self) -> Result<pult_core::driver::QualityAudit, pult_core::driver::DriverError> {
+        fn check_strict(
+            &self,
+        ) -> Result<pult_core::driver::QualityAudit, pult_core::driver::DriverError> {
             Ok(pult_core::driver::QualityAudit {
                 passed: true,
                 total_checks: 9,
@@ -130,7 +144,10 @@ fn test_phase9_transition_prints_modified_files_and_summary() {
         ) -> Result<String, pult_core::driver::DriverError> {
             Ok(format!("feat(core): {} (ref #{})", subject, ticket_id))
         }
-        fn validate_phase_diff(&self, _phase: GostPhase) -> Result<(), pult_core::driver::DriverError> {
+        fn validate_phase_diff(
+            &self,
+            _phase: GostPhase,
+        ) -> Result<(), pult_core::driver::DriverError> {
             Ok(())
         }
         fn commit_phase(
@@ -146,7 +163,11 @@ fn test_phase9_transition_prints_modified_files_and_summary() {
         fn close_ticket(&self, _ticket_id: u32) -> Result<(), pult_core::driver::DriverError> {
             Ok(())
         }
-        fn create_ticket(&self, _title: &str, _body: &str) -> Result<(u32, String), pult_core::driver::DriverError> {
+        fn create_ticket(
+            &self,
+            _title: &str,
+            _body: &str,
+        ) -> Result<(u32, String), pult_core::driver::DriverError> {
             Ok((32, "feat/32-demo".into()))
         }
         fn detect_branch_phase(
@@ -177,9 +198,15 @@ fn test_phase9_transition_prints_modified_files_and_summary() {
 
     // O viewport deve conter a apresentação da Fase 9 com arquivos alterados e atalho de diff
     let has_fase9_header = app.viewport_lines.iter().any(|l| l.contains("Fase 9"));
-    let has_diff_hint = app.viewport_lines.iter().any(|l| l.contains("Ctrl+D") || l.contains("/diff"));
+    let has_diff_hint = app
+        .viewport_lines
+        .iter()
+        .any(|l| l.contains("Ctrl+D") || l.contains("/diff"));
     assert!(has_fase9_header, "Viewport deve conter cabeçalho da Fase 9");
-    assert!(has_diff_hint, "Viewport deve instruir usuária sobre /diff ou Ctrl+D");
+    assert!(
+        has_diff_hint,
+        "Viewport deve instruir usuária sobre /diff ou Ctrl+D"
+    );
 }
 
 #[test]

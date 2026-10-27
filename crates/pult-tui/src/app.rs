@@ -1039,8 +1039,12 @@ impl App {
         for line in chronicle.lines() {
             self.append_viewport_line(&format!("  {}", line));
         }
-        self.append_viewport_line("ℹ Pressione Ctrl+D ou digite /diff para inspecionar o diff completo.");
-        self.append_viewport_line("ℹ Pressione Ctrl+P para homologar, fechar o ticket e finalizar o ciclo.");
+        self.append_viewport_line(
+            "ℹ Pressione Ctrl+D ou digite /diff para inspecionar o diff completo.",
+        );
+        self.append_viewport_line(
+            "ℹ Pressione Ctrl+P para homologar, fechar o ticket e finalizar o ciclo.",
+        );
     }
 
     pub fn quit(&mut self) {
