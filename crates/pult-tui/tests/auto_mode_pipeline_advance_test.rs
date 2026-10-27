@@ -198,3 +198,94 @@ fn test_auto_pipeline_chain_from_phase3_to_phase9() {
         "Na Fase 9, should_auto_advance_on_completed deve ser falso para aguardar usuária"
     );
 }
+
+#[test]
+fn test_mutation_auto_mode_pauses_if_quality_gate_fails() {
+    struct FailingAuditDriver {
+        current_branch: String,
+    }
+    impl RepoDriver for FailingAuditDriver {
+        fn current_branch(&self) -> Result<String, DriverError> {
+            Ok(self.current_branch.clone())
+        }
+        fn checkout_branch(&self, _branch: &str, _create: bool) -> Result<(), DriverError> {
+            Ok(())
+        }
+        fn merge_branch(&self, _branch: &str) -> Result<(), DriverError> {
+            Ok(())
+        }
+        fn status(&self) -> Result<GitStatus, DriverError> {
+            Ok(GitStatus {
+                branch: self.current_branch.clone(),
+                is_clean: true,
+                modified_files: Vec::new(),
+                untracked_files: Vec::new(),
+            })
+        }
+        fn check_strict(&self) -> Result<QualityAudit, DriverError> {
+            Ok(QualityAudit {
+                passed: false,
+                total_checks: 10,
+                conforming: 8,
+                warnings: 0,
+                failures: 2,
+                compliance_index: "80%".into(),
+            })
+        }
+        fn format_commit_message(
+            &self,
+            _phase: GostPhase,
+            ticket_id: u32,
+            _scope: Option<&str>,
+            subject: &str,
+            _body: Option<&str>,
+        ) -> Result<String, DriverError> {
+            Ok(format!("feat(core): {} (ref #{})", subject, ticket_id))
+        }
+        fn validate_phase_diff(&self, _phase: GostPhase) -> Result<(), DriverError> {
+            Ok(())
+        }
+        fn commit_phase(
+            &self,
+            _phase: GostPhase,
+            _ticket_id: u32,
+            _scope: Option<&str>,
+            _subject: &str,
+            _body: Option<&str>,
+        ) -> Result<String, DriverError> {
+            Ok("commit-sha".into())
+        }
+        fn close_ticket(&self, _ticket_id: u32) -> Result<(), DriverError> {
+            Ok(())
+        }
+        fn create_ticket(&self, _title: &str, _body: &str) -> Result<(u32, String), DriverError> {
+            Ok((31, "feat/31-auto-pipeline".into()))
+        }
+        fn detect_branch_phase(
+            &self,
+            _branch: &str,
+            _ticket_id: Option<u32>,
+        ) -> Result<GostPhase, DriverError> {
+            Ok(GostPhase::GreenCode)
+        }
+    }
+
+    let mut app = App::new();
+    app.is_auto_mode = true;
+    app.set_ticket_info(Some(31), "feat/31-auto-pipeline", 5);
+
+    let driver = FailingAuditDriver {
+        current_branch: "feat/31-auto-pipeline".into(),
+    };
+
+    let res = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(
+        res.is_err(),
+        "Quality Gate falho deve pausar a esteira auto com erro"
+    );
+    assert_ne!(
+        app.gost_phase,
+        GostPhase::CloseTicket,
+        "Não deve alcançar a Fase 9 se o Quality Gate for rejeitado"
+    );
+}
