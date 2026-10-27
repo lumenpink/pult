@@ -190,3 +190,24 @@ async fn test_scout_generate_session_slug_format_and_length_limit() {
     let empty_slug = engine.generate_session_slug("!@#$%^&*()").await;
     assert_eq!(empty_slug, "sessao-trabalho");
 }
+
+#[test]
+fn test_mutation_sanitize_kebab_slug_direct_edge_cases() {
+    use pult_core::scout::engine::sanitize_kebab_slug;
+
+    // Mutante 1: Acentos e cedilha variados
+    let accented = "Ação, Éxito, Ícone, Órgão, Úmido, Criança & Pão!";
+    let clean = sanitize_kebab_slug(accented);
+    assert_eq!(clean, "acao-exito-icone-orgao-umido-crianca-pao");
+
+    // Mutante 2: Truncamento exato em 60 chars sem partir palavra
+    let text = "este-e-um-slug-com-palavras-perfeitas-para-testar-o-limite-exato-de-sessenta-chars";
+    let truncated = sanitize_kebab_slug(text);
+    assert!(truncated.len() <= 60);
+    assert!(!truncated.ends_with('-'));
+
+    // Mutante 3: Texto de 59 caracteres não deve ser reduzido
+    let exact_59 = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-p-q-r-s-t-u-v-w-x-y-z-0-1-2-3-4-5-6-7";
+    let res = sanitize_kebab_slug(exact_59);
+    assert!(res.len() <= 60);
+}

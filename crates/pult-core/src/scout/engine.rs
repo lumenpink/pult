@@ -168,13 +168,13 @@ pub fn sanitize_kebab_slug(input: &str) -> String {
     for ch in input.chars() {
         let ch_lower = ch.to_ascii_lowercase();
         match ch {
-            'á' | 'à' | 'ã' | 'â' | 'ä' => mapped.push('a'),
-            'é' | 'è' | 'ê' | 'ë' => mapped.push('e'),
-            'í' | 'ì' | 'î' | 'ï' => mapped.push('i'),
-            'ó' | 'ò' | 'õ' | 'ô' | 'ö' => mapped.push('o'),
-            'ú' | 'ù' | 'û' | 'ü' => mapped.push('u'),
-            'ç' => mapped.push('c'),
-            'ñ' => mapped.push('n'),
+            'á' | 'à' | 'ã' | 'â' | 'ä' | 'Á' | 'À' | 'Ã' | 'Â' | 'Ä' => mapped.push('a'),
+            'é' | 'è' | 'ê' | 'ë' | 'É' | 'È' | 'Ê' | 'Ë' => mapped.push('e'),
+            'í' | 'ì' | 'î' | 'ï' | 'Í' | 'Ì' | 'Î' | 'Ï' => mapped.push('i'),
+            'ó' | 'ò' | 'õ' | 'ô' | 'ö' | 'Ó' | 'Ò' | 'Õ' | 'Ô' | 'Ö' => mapped.push('o'),
+            'ú' | 'ù' | 'û' | 'ü' | 'Ú' | 'Ù' | 'Û' | 'Ü' => mapped.push('u'),
+            'ç' | 'Ç' => mapped.push('c'),
+            'ñ' | 'Ñ' => mapped.push('n'),
             _ => {
                 if ch_lower.is_ascii_alphanumeric() {
                     mapped.push(ch_lower);
