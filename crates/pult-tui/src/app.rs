@@ -32,6 +32,9 @@ pub struct App {
     pub pending_dispatch: Option<String>,
     pub busy_start_time: Option<std::time::Instant>,
     pub is_auto_mode: bool,
+    pub show_diff_modal: bool,
+    pub diff_lines: Vec<String>,
+    pub diff_scroll_offset: usize,
 }
 
 impl Default for App {
@@ -74,6 +77,9 @@ impl App {
             pending_dispatch: None,
             busy_start_time: None,
             is_auto_mode: false,
+            show_diff_modal: false,
+            diff_lines: Vec::new(),
+            diff_scroll_offset: 0,
         }
     }
 
@@ -610,6 +616,8 @@ impl App {
                     self.gost_phase = GostPhase::CloseTicket;
                     self.pending_dispatch = None;
 
+                    self.emit_phase9_inspection(driver);
+
                     let ok_msg = "★ [GOST Esteira Autônoma] Fases 6, 7 e 8 concluídas com sucesso. Avançando para FASE 9 (CloseTicket) para homologação final da usuária.".to_string();
                     self.append_viewport_line(&ok_msg);
                     if let Ok(mut lock) = self.session.lock() {
@@ -808,7 +816,8 @@ impl App {
             }
             crate::event::TuiAction::FocusToggled
             | crate::event::TuiAction::Scrolled
-            | crate::event::TuiAction::AutoModeToggled(_) => Ok("navegacao".into()),
+            | crate::event::TuiAction::AutoModeToggled(_)
+            | crate::event::TuiAction::DiffModalToggled => Ok("navegacao".into()),
         }
     }
 
@@ -833,6 +842,10 @@ impl App {
             "/auto" => {
                 let active = self.toggle_auto_mode();
                 Some(crate::event::TuiAction::AutoModeToggled(active))
+            }
+            "/diff" => {
+                self.toggle_diff_modal();
+                Some(crate::event::TuiAction::DiffModalToggled)
             }
             "/new" => {
                 self.reset_session();
@@ -977,6 +990,27 @@ impl App {
             && self.gost_phase < GostPhase::CloseTicket
     }
 
+    pub fn toggle_diff_modal(&mut self) -> bool {
+        self.show_diff_modal = !self.show_diff_modal;
+        if self.show_diff_modal {
+            let driver = pult_core::CccpGitDriver::new(&self.repo_path);
+            if let Ok(full) = pult_core::driver::RepoDriver::diff_full(&driver, "main") {
+                self.diff_lines = full.lines().map(|s| s.to_string()).collect();
+            }
+            self.diff_scroll_offset = 0;
+        }
+        self.show_diff_modal
+    }
+
+    pub fn scroll_diff_up(&mut self, amount: usize) {
+        self.diff_scroll_offset = self.diff_scroll_offset.saturating_sub(amount);
+    }
+
+    pub fn scroll_diff_down(&mut self, amount: usize) {
+        let max = self.diff_lines.len().saturating_sub(1);
+        self.diff_scroll_offset = (self.diff_scroll_offset + amount).min(max);
+    }
+
     pub fn submit_input(&mut self) -> Option<String> {
         if self.is_busy {
             return None;
@@ -988,6 +1022,25 @@ impl App {
         }
         self.textarea = TextArea::default();
         Some(content)
+    }
+
+    pub fn emit_phase9_inspection(&mut self, driver: &dyn pult_core::driver::RepoDriver) {
+        self.append_viewport_line("★ [GOST Fase 9: Homologação Final & Fechamento]");
+        if let Ok(stat) = driver.diff_stat("main") {
+            if !stat.trim().is_empty() {
+                self.append_viewport_line("─── Arquivos Alterados no Ticket ───");
+                for line in stat.lines() {
+                    self.append_viewport_line(&format!("  {}", line));
+                }
+            }
+        }
+        let chronicle = self.compile_closing_chronicle("docs", "finalizar ciclo GOST");
+        self.append_viewport_line("─── Minuta do Commit e Resumo de Fechamento ───");
+        for line in chronicle.lines() {
+            self.append_viewport_line(&format!("  {}", line));
+        }
+        self.append_viewport_line("ℹ Pressione Ctrl+D ou digite /diff para inspecionar o diff completo.");
+        self.append_viewport_line("ℹ Pressione Ctrl+P para homologar, fechar o ticket e finalizar o ciclo.");
     }
 
     pub fn quit(&mut self) {
@@ -1011,7 +1064,7 @@ pub fn infer_ticket_from_branch(branch: &str) -> Option<u32> {
 }
 
 pub const SLASH_COMMANDS: &[&str] = &[
-    "/auto", "/branch", "/new", "/approve", "/next", "/finish", "/merge", "/quit", "/help",
+    "/auto", "/diff", "/branch", "/new", "/approve", "/next", "/finish", "/merge", "/quit", "/help",
 ];
 
 /// Autocompleta comandos iniciados por barra ('/').

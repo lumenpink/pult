@@ -23,7 +23,9 @@ pub fn render(app: &App, frame: &mut Frame) {
     render_editor(app, frame, chunks[2]);
     render_footer(app, frame, chunks[3]);
 
-    if app.show_help {
+    if app.show_diff_modal {
+        render_diff_modal(app, frame, size);
+    } else if app.show_help {
         render_help_modal(app, frame, size);
     }
 }
@@ -162,9 +164,66 @@ fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph, area);
 }
 
+fn render_diff_modal(app: &App, frame: &mut Frame, area: Rect) {
+    let modal_width = (area.width * 85 / 100).min(area.width.saturating_sub(4)).max(20);
+    let modal_height = (area.height * 80 / 100).min(area.height.saturating_sub(2)).max(10);
+    let x = (area.width.saturating_sub(modal_width)) / 2;
+    let y = (area.height.saturating_sub(modal_height)) / 2;
+    let popup_area = Rect::new(x, y, modal_width, modal_height);
+
+    frame.render_widget(ratatui::widgets::Clear, popup_area);
+
+    let inner_height = modal_height.saturating_sub(2) as usize;
+    let total_lines = app.diff_lines.len();
+    let scroll = app
+        .diff_scroll_offset
+        .min(total_lines.saturating_sub(inner_height));
+
+    let visible_lines: Vec<Line> = if app.diff_lines.is_empty() {
+        vec![Line::from(Span::styled(
+            " Nenhuma alteração detectada contra a branch base.",
+            Style::default().fg(Color::DarkGray),
+        ))]
+    } else {
+        app.diff_lines
+            .iter()
+            .skip(scroll)
+            .take(inner_height)
+            .map(|line| {
+                let style = if line.starts_with('+') && !line.starts_with("+++") {
+                    Style::default().fg(Color::Green)
+                } else if line.starts_with('-') && !line.starts_with("---") {
+                    Style::default().fg(Color::Red)
+                } else if line.starts_with("@@") {
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                } else if line.starts_with("diff --git") || line.starts_with("index ") {
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                } else if line.starts_with("---") || line.starts_with("+++") {
+                    Style::default().fg(Color::LightYellow)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                Line::from(Span::styled(line.as_str(), style))
+            })
+            .collect()
+    };
+
+    let title = format!(
+        " [Inspeção de Diff ({} linhas)] (Esc/Ctrl+D para fechar, ↑/↓ rolar) ",
+        total_lines
+    );
+    let block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Cyan));
+
+    let paragraph = Paragraph::new(visible_lines).block(block);
+    frame.render_widget(paragraph, popup_area);
+}
+
 fn render_help_modal(_app: &App, frame: &mut Frame, area: Rect) {
     let modal_width = 72.min(area.width.saturating_sub(4));
-    let modal_height = 16.min(area.height.saturating_sub(2));
+    let modal_height = 18.min(area.height.saturating_sub(2));
     let x = (area.width.saturating_sub(modal_width)) / 2;
     let y = (area.height.saturating_sub(modal_height)) / 2;
     let popup_area = Rect::new(x, y, modal_width, modal_height);
@@ -195,6 +254,11 @@ fn render_help_modal(_app: &App, frame: &mut Frame, area: Rect) {
         Line::from(vec![Span::raw(
             "────────────────────────────────────────────────────────────",
         )]),
+        Line::from(vec![
+            Span::styled("/diff     ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+D   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Abrir janela de inspeção do diff completo"),
+        ]),
         Line::from(vec![
             Span::styled("/auto     ", Style::default().fg(Color::Green)),
             Span::styled("Ctrl+X   ", Style::default().fg(Color::Cyan)),

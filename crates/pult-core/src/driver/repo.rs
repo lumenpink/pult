@@ -62,6 +62,18 @@ pub trait RepoDriver: Send + Sync {
         let _ = (branch, ticket_id);
         Ok(GostPhase::SpecContract)
     }
+
+    /// Retorna as estatísticas dos arquivos alterados contra a branch base (ex.: main).
+    fn diff_stat(&self, base_branch: &str) -> Result<String, DriverError> {
+        let _ = base_branch;
+        Ok(String::new())
+    }
+
+    /// Retorna o diff textual completo contra a branch base (ex.: main).
+    fn diff_full(&self, base_branch: &str) -> Result<String, DriverError> {
+        let _ = base_branch;
+        Ok(String::new())
+    }
 }
 
 /// Implementação padrão que delega ao binário `cccp` e comandos Git nativos.
@@ -406,6 +418,24 @@ impl RepoDriver for CccpGitDriver {
 
         // Se branch existe mas não tem commits normativos de fase ainda: Fase 3 (SpecContract)
         Ok(GostPhase::SpecContract)
+    }
+
+    fn diff_stat(&self, base_branch: &str) -> Result<String, DriverError> {
+        let out = self.run_git(&["diff", "--stat", &format!("{}...HEAD", base_branch)])?;
+        if out.trim().is_empty() {
+            self.run_git(&["status", "--short"])
+        } else {
+            Ok(out)
+        }
+    }
+
+    fn diff_full(&self, base_branch: &str) -> Result<String, DriverError> {
+        let out = self.run_git(&["diff", &format!("{}...HEAD", base_branch)])?;
+        if out.trim().is_empty() {
+            self.run_git(&["diff", "HEAD"])
+        } else {
+            Ok(out)
+        }
     }
 }
 

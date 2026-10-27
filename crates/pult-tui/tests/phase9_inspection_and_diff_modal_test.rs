@@ -88,58 +88,86 @@ fn test_ctrl_d_and_slash_diff_toggle_diff_modal() {
 
 #[test]
 fn test_phase9_transition_prints_modified_files_and_summary() {
-    let dir = tempdir().expect("tempdir");
-    let repo_path = dir.path();
+    struct MockPhase9Driver {
+        branch: String,
+    }
 
-    std::process::Command::new("git")
-        .args(["init", "-b", "main"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git init");
-    std::process::Command::new("git")
-        .args(["config", "user.name", "Tester"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git config user.name");
-    std::process::Command::new("git")
-        .args(["config", "user.email", "tester@example.com"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git config user.email");
+    impl RepoDriver for MockPhase9Driver {
+        fn current_branch(&self) -> Result<String, pult_core::driver::DriverError> {
+            Ok(self.branch.clone())
+        }
+        fn checkout_branch(&self, _branch: &str, _create: bool) -> Result<(), pult_core::driver::DriverError> {
+            Ok(())
+        }
+        fn merge_branch(&self, _branch: &str) -> Result<(), pult_core::driver::DriverError> {
+            Ok(())
+        }
+        fn status(&self) -> Result<pult_core::driver::GitStatus, pult_core::driver::DriverError> {
+            Ok(pult_core::driver::GitStatus {
+                branch: self.branch.clone(),
+                is_clean: true,
+                modified_files: Vec::new(),
+                untracked_files: Vec::new(),
+            })
+        }
+        fn check_strict(&self) -> Result<pult_core::driver::QualityAudit, pult_core::driver::DriverError> {
+            Ok(pult_core::driver::QualityAudit {
+                passed: true,
+                total_checks: 9,
+                conforming: 9,
+                warnings: 0,
+                failures: 0,
+                compliance_index: "100%".into(),
+            })
+        }
+        fn format_commit_message(
+            &self,
+            _phase: GostPhase,
+            ticket_id: u32,
+            _scope: Option<&str>,
+            subject: &str,
+            _body: Option<&str>,
+        ) -> Result<String, pult_core::driver::DriverError> {
+            Ok(format!("feat(core): {} (ref #{})", subject, ticket_id))
+        }
+        fn validate_phase_diff(&self, _phase: GostPhase) -> Result<(), pult_core::driver::DriverError> {
+            Ok(())
+        }
+        fn commit_phase(
+            &self,
+            _phase: GostPhase,
+            _ticket_id: u32,
+            _scope: Option<&str>,
+            _subject: &str,
+            _body: Option<&str>,
+        ) -> Result<String, pult_core::driver::DriverError> {
+            Ok("commit-sha".into())
+        }
+        fn close_ticket(&self, _ticket_id: u32) -> Result<(), pult_core::driver::DriverError> {
+            Ok(())
+        }
+        fn create_ticket(&self, _title: &str, _body: &str) -> Result<(u32, String), pult_core::driver::DriverError> {
+            Ok((32, "feat/32-demo".into()))
+        }
+        fn detect_branch_phase(
+            &self,
+            _branch: &str,
+            _ticket_id: Option<u32>,
+        ) -> Result<GostPhase, pult_core::driver::DriverError> {
+            Ok(GostPhase::GreenCode)
+        }
+        fn diff_stat(&self, _base_branch: &str) -> Result<String, pult_core::driver::DriverError> {
+            Ok(" src/lib.rs | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)".into())
+        }
+        fn diff_full(&self, _base_branch: &str) -> Result<String, pult_core::driver::DriverError> {
+            Ok("+pub fn hello() {}".into())
+        }
+    }
 
-    fs::write(repo_path.join("README.md"), "# Test").unwrap();
-    std::process::Command::new("git")
-        .args(["add", "README.md"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git add");
-    std::process::Command::new("git")
-        .args(["commit", "-m", "chore: initial"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git commit");
-
-    std::process::Command::new("git")
-        .args(["checkout", "-b", "feat/32-demo"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git checkout -b");
-
-    fs::create_dir_all(repo_path.join("src")).unwrap();
-    fs::write(repo_path.join("src/lib.rs"), "pub fn hello() {}").unwrap();
-    std::process::Command::new("git")
-        .args(["add", "src/lib.rs"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git add");
-    std::process::Command::new("git")
-        .args(["commit", "-m", "feat(core): hello"])
-        .current_dir(repo_path)
-        .output()
-        .expect("git commit");
-
-    let driver = CccpGitDriver::new(repo_path);
-    let mut app = App::with_repo(repo_path.to_path_buf());
+    let driver = MockPhase9Driver {
+        branch: "feat/32-demo".into(),
+    };
+    let mut app = App::new();
     app.set_ticket_info(Some(32), "feat/32-demo", 5);
 
     // Ao aprovar Fase 5, avança por 6, 7 e 8 até Fase 9

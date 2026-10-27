@@ -18,12 +18,41 @@ pub enum TuiAction {
     NewSession,
     BranchChanged(String),
     AutoModeToggled(bool),
+    DiffModalToggled,
 }
 
 pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
-    if key.code == KeyCode::Esc && app.show_help {
-        app.show_help = false;
-        return Some(TuiAction::HelpToggled);
+    if key.code == KeyCode::Esc {
+        if app.show_diff_modal {
+            app.show_diff_modal = false;
+            return Some(TuiAction::DiffModalToggled);
+        }
+        if app.show_help {
+            app.show_help = false;
+            return Some(TuiAction::HelpToggled);
+        }
+    }
+
+    if app.show_diff_modal {
+        match key.code {
+            KeyCode::Char('k') | KeyCode::Up => {
+                app.scroll_diff_up(1);
+                return Some(TuiAction::Scrolled);
+            }
+            KeyCode::Char('j') | KeyCode::Down => {
+                app.scroll_diff_down(1);
+                return Some(TuiAction::Scrolled);
+            }
+            KeyCode::PageUp => {
+                app.scroll_diff_up(5);
+                return Some(TuiAction::Scrolled);
+            }
+            KeyCode::PageDown => {
+                app.scroll_diff_down(5);
+                return Some(TuiAction::Scrolled);
+            }
+            _ => {}
+        }
     }
 
     if key.modifiers.contains(KeyModifiers::CONTROL) {
@@ -72,6 +101,10 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
             }
             KeyCode::Char('m') => {
                 return Some(TuiAction::MergeTriggered);
+            }
+            KeyCode::Char('d') => {
+                let _ = app.toggle_diff_modal();
+                return Some(TuiAction::DiffModalToggled);
             }
             _ => {}
         }
