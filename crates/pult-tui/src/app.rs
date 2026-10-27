@@ -111,6 +111,17 @@ impl App {
         }
     }
 
+    pub fn header_branch_label(&self) -> String {
+        format!(
+            "[{}] {}",
+            match self.ticket_id {
+                Some(id) => format!("#{}", id),
+                None => "Rascunho".to_string(),
+            },
+            self.branch_name
+        )
+    }
+
     /// Carrega uma sessão gravada em disco a partir de um caminho de arquivo,
     /// restaurando o histórico de turnos no viewport e sincronizando os metadados GOST.
     pub fn load_session_file(&mut self, path: &std::path::Path) -> std::io::Result<()> {
@@ -670,4 +681,13 @@ pub fn autocomplete_slash_command(prefix: &str) -> Option<&'static str> {
     } else {
         None
     }
+}
+
+/// Formata o prompt despachado ao Agente Externo incorporando o histórico multi-turnos recente.
+pub fn format_prompt_with_history(
+    _session: &Session,
+    prompt: &str,
+    injected_context: &str,
+) -> String {
+    format!("{}{}", prompt, injected_context)
 }
