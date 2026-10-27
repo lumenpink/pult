@@ -54,6 +54,7 @@ fn test_session_markdown_serialization_and_deserialization() {
         status: TurnStatus::Completed,
         tokens: Some(48),
         tokens_out: None,
+        elapsed_ms: None,
     });
 
     session.turns.push(Turn {
@@ -66,6 +67,7 @@ fn test_session_markdown_serialization_and_deserialization() {
         status: TurnStatus::Completed,
         tokens: None,
         tokens_out: Some(310),
+        elapsed_ms: None,
     });
 
     let markdown = session
@@ -151,6 +153,7 @@ fn test_mutation_turn_statuses_and_context_filter() {
         status: TurnStatus::InProgress,
         tokens: Some(120),
         tokens_out: Some(40),
+        elapsed_ms: None,
     });
 
     session.turns.push(Turn {
@@ -161,6 +164,7 @@ fn test_mutation_turn_statuses_and_context_filter() {
         status: TurnStatus::Truncated,
         tokens: None,
         tokens_out: Some(8192),
+        elapsed_ms: None,
     });
 
     let md = session

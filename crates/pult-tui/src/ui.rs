@@ -36,7 +36,11 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
             .add_modifier(Modifier::BOLD),
     );
     let phase_span = Span::styled(
-        format!(" FASE {}: {} ", app.gost_phase.number(), app.gost_phase.name()),
+        format!(
+            " FASE {}: {} ",
+            app.gost_phase.number(),
+            app.gost_phase.name()
+        ),
         Style::default()
             .fg(Color::Cyan)
             .add_modifier(Modifier::BOLD),

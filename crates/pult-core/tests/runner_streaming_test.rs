@@ -131,6 +131,7 @@ async fn test_runner_resume_session() {
         status: TurnStatus::Completed,
         tokens: Some(48),
         tokens_out: None,
+        elapsed_ms: None,
     });
     session.turns.push(Turn {
         turn_number: 2,
@@ -140,6 +141,7 @@ async fn test_runner_resume_session() {
         status: TurnStatus::Truncated,
         tokens: None,
         tokens_out: Some(150),
+        elapsed_ms: None,
     });
     storage.save(&session).expect("salvar sessao");
 
@@ -216,6 +218,7 @@ fn test_mutation_resume_inspection_branch_mismatch_and_completed() {
         status: TurnStatus::Completed,
         tokens: Some(10),
         tokens_out: Some(20),
+        elapsed_ms: None,
     });
     storage.save(&session).expect("salvar");
 

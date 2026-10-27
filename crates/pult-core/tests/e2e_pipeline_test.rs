@@ -70,6 +70,7 @@ async fn test_e2e_full_workflow_orchestration() {
         status: TurnStatus::Completed,
         tokens: Some(15),
         tokens_out: None,
+        elapsed_ms: None,
     });
     storage.save(&session).expect("salvar sessao inicial");
 
@@ -159,6 +160,7 @@ async fn test_mutation_e2e_runner_failure_session_marking() {
         status: TurnStatus::Completed,
         tokens: Some(5),
         tokens_out: None,
+        elapsed_ms: None,
     });
 
     let runner = AgyRunner::with_options(RunnerOptions {
