@@ -250,6 +250,105 @@ impl App {
         Ok(())
     }
 
+    /// Localiza o arquivo de sessão associado a um ticket dentro de `.antigravity/pult/sessions/`.
+    pub fn find_session_for_ticket(
+        repo_dir: &std::path::Path,
+        ticket_id: u32,
+        branch: &str,
+    ) -> Option<std::path::PathBuf> {
+        let sessions_dir = repo_dir.join(".antigravity/pult/sessions");
+        if !sessions_dir.is_dir() {
+            return None;
+        }
+
+        let prefix_padded = format!("{:06}", ticket_id);
+        let prefix_short = format!("{}-", ticket_id);
+        let prefix_padded_dash = format!("{}-", prefix_padded);
+        let prefix_four_padded = format!("0000{}-", ticket_id);
+
+        let entries = std::fs::read_dir(&sessions_dir).ok()?;
+
+        let mut candidate_by_frontmatter = None;
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+
+            if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+                // 1. Correspondência de prefixo de arquivo
+                if file_name.starts_with(&prefix_padded_dash)
+                    || file_name.starts_with(&prefix_short)
+                    || file_name.starts_with(&prefix_four_padded)
+                {
+                    return Some(path);
+                }
+            }
+
+            // 2. Fallback por inspeção do Frontmatter YAML
+            if candidate_by_frontmatter.is_none() {
+                if let Ok(content) = std::fs::read_to_string(&path) {
+                    let has_match = if let Ok(session) = Session::from_markdown(&content) {
+                        session
+                            .metadata
+                            .ticket
+                            .as_ref()
+                            .map(|t| t.id == ticket_id || (!branch.is_empty() && t.branch == branch))
+                            .unwrap_or(false)
+                    } else {
+                        content.contains(&format!("id: {}", ticket_id))
+                            || (!branch.is_empty() && content.contains(&format!("branch: {}", branch)))
+                    };
+                    if has_match {
+                        candidate_by_frontmatter = Some(path);
+                    }
+                }
+            }
+        }
+
+        candidate_by_frontmatter
+    }
+
+    /// Reconcilia automaticamente a branch ativa, restaurando a sessão existente e
+    /// detectando a fase GOST correta via histórico de commits do repositório.
+    pub fn auto_sync_branch_state(&mut self, branch: &str, driver: &dyn pult_core::RepoDriver) {
+        self.branch_name = branch.to_string();
+        let tid_opt = infer_ticket_from_branch(branch);
+        self.ticket_id = tid_opt;
+
+        if let Some(tid) = tid_opt {
+            if let Some(session_path) = Self::find_session_for_ticket(&self.repo_path, tid, branch) {
+                if let Ok(()) = self.load_session_file(&session_path) {
+                    self.append_viewport_line(&format!(
+                        "✓ Sessão anterior restaurada a partir de '{}'.",
+                        session_path.display()
+                    ));
+                }
+            }
+        }
+
+        if let Ok(detected_phase) = driver.detect_branch_phase(branch, self.ticket_id) {
+            self.gost_phase = detected_phase;
+            if let Ok(mut lock) = self.session.lock() {
+                if let Some(ref mut sess) = *lock {
+                    sess.metadata.gost.phase = detected_phase.number();
+                }
+            }
+        }
+
+        let phase_msg = format!(
+            "🌿 Branch ativa: '{}' (Ticket: {}) | Fase GOST: FASE {} ({})",
+            self.branch_name,
+            self.ticket_id
+                .map(|id| format!("#{}", id))
+                .unwrap_or_else(|| "Nenhum".to_string()),
+            self.gost_phase.number(),
+            self.gost_phase.name()
+        );
+        self.append_viewport_line(&phase_msg);
+    }
+
     pub fn advance_gost_phase(&mut self) -> Result<GostPhase, &'static str> {
         let current_num = self.gost_phase.number();
         if current_num >= 9 {
@@ -638,15 +737,11 @@ impl App {
                 driver
                     .checkout_branch(&new_branch, true)
                     .map_err(|e| e.to_string())?;
-                self.branch_name = new_branch.clone();
-                if let Some(tid) = infer_ticket_from_branch(&new_branch) {
-                    self.ticket_id = Some(tid);
-                }
+                self.auto_sync_branch_state(&new_branch, driver);
                 let msg = format!(
-                    "✓ Alternado para a branch '{}' (Ticket: {:?}).",
-                    new_branch, self.ticket_id
+                    "✓ Alternado para a branch '{}' (Ticket: {:?}, Fase: {}).",
+                    new_branch, self.ticket_id, self.gost_phase.number()
                 );
-                self.append_viewport_line(&msg);
                 Ok(msg)
             }
             crate::event::TuiAction::FinishTriggered => {

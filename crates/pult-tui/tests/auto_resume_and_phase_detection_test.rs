@@ -98,33 +98,24 @@ fn test_find_session_for_ticket_by_prefix_and_frontmatter() {
 
     // 1. Arquivo canônico formal 000002-script-shell.md
     let formal_file = sessions_dir.join("000002-script-shell.md");
-    fs::write(
-        &formal_file,
-        "---\nsession_id: 000002-script-shell\nticket:\n  id: 2\n  branch: feat/2-script\n---\n<!-- TURN 1: user -->\nTurno 1\n",
-    )
-    .unwrap();
+    let sess_2 = pult_core::Session::new_formal(2, "script-shell", "feat/2-script");
+    fs::write(&formal_file, sess_2.to_markdown().unwrap()).unwrap();
 
     let found = App::find_session_for_ticket(&repo_dir, 2, "feat/2-script");
     assert_eq!(found, Some(formal_file));
 
     // 2. Arquivo numérico curto 42-auth.md
     let short_file = sessions_dir.join("42-auth.md");
-    fs::write(
-        &short_file,
-        "---\nsession_id: 42-auth\nticket:\n  id: 42\n  branch: feat/42-auth\n---\n<!-- TURN 1: user -->\nTurno 1\n",
-    )
-    .unwrap();
+    let sess_42 = pult_core::Session::new_formal(42, "auth", "feat/42-auth");
+    fs::write(&short_file, sess_42.to_markdown().unwrap()).unwrap();
 
     let found_42 = App::find_session_for_ticket(&repo_dir, 42, "feat/42-auth");
     assert_eq!(found_42, Some(short_file));
 
     // 3. Arquivo com slug diferente mas com frontmatter apontando para ticket 99
     let arbitrary_file = sessions_dir.join("sessao-rascunho-antiga.md");
-    fs::write(
-        &arbitrary_file,
-        "---\nsession_id: antiga-99\nticket:\n  id: 99\n  branch: fix/99-bug\n---\n<!-- TURN 1: user -->\nTurno 1\n",
-    )
-    .unwrap();
+    let sess_99 = pult_core::Session::new_formal(99, "antiga-99", "fix/99-bug");
+    fs::write(&arbitrary_file, sess_99.to_markdown().unwrap()).unwrap();
 
     let found_99 = App::find_session_for_ticket(&repo_dir, 99, "fix/99-bug");
     assert_eq!(found_99, Some(arbitrary_file));
@@ -142,11 +133,8 @@ fn test_auto_sync_branch_state_restores_session_and_phase() {
     fs::create_dir_all(&sessions_dir).unwrap();
 
     let session_file = sessions_dir.join("000027-auto-resume.md");
-    fs::write(
-        &session_file,
-        "---\nsession_id: 000027-auto-resume\nticket:\n  id: 27\n  branch: feat/27-auto-resume\ngost:\n  phase: 3\n---\n<!-- TURN 1: user -->\nOlá mundo retomado\n",
-    )
-    .unwrap();
+    let sess_27 = pult_core::Session::new_formal(27, "auto-resume", "feat/27-auto-resume");
+    fs::write(&session_file, sess_27.to_markdown().unwrap()).unwrap();
 
     let mut app = App::with_repo(repo_dir);
     let driver = MockPhaseDetectionDriver {

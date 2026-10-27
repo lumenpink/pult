@@ -52,6 +52,12 @@ pub trait RepoDriver: Send + Sync {
         let _ = (title, body);
         Ok((1, "feat/1-default".to_string()))
     }
+
+    /// Detecta a fase GOST ativa a partir dos commits existentes no branch.
+    fn detect_branch_phase(&self, branch: &str, ticket_id: Option<u32>) -> Result<GostPhase, DriverError> {
+        let _ = (branch, ticket_id);
+        Ok(GostPhase::SpecContract)
+    }
 }
 
 /// Implementação padrão que delega ao binário `cccp` e comandos Git nativos.
@@ -318,6 +324,75 @@ impl RepoDriver for CccpGitDriver {
             exit_code: Some(1),
             stderr: format!("Falha ao extrair ID do ticket criado: {}", stdout),
         })
+    }
+
+    fn detect_branch_phase(&self, branch: &str, ticket_id: Option<u32>) -> Result<GostPhase, DriverError> {
+        if branch == "main" || branch == "master" {
+            return Ok(GostPhase::Ticket);
+        }
+
+        let log_result = self
+            .run_git(&["log", &format!("main..{}", branch), "--pretty=format:%B---COMMIT-END---"])
+            .or_else(|_| self.run_git(&["log", "-n", "30", "--pretty=format:%B---COMMIT-END---"]));
+
+        let commits_text = match log_result {
+            Ok(txt) => txt,
+            Err(_) => return Ok(GostPhase::SpecContract),
+        };
+
+        let tid_suffix = ticket_id.map(|id| format!("#{}", id));
+
+        // 1. Fase 9 (closes #<id> - ph9 ou closes #<id>)
+        if commits_text.contains("- ph9)") || commits_text.contains("(closes #") {
+            if let Some(ref tid) = tid_suffix {
+                if commits_text.contains(tid) {
+                    return Ok(GostPhase::CloseTicket);
+                }
+            } else {
+                return Ok(GostPhase::CloseTicket);
+            }
+        }
+
+        // 2. Fase 5 comitada (ph5) -> avançou pelas fases 6..8 ou aguarda revisão
+        if commits_text.contains("- ph5)") {
+            if let Some(ref tid) = tid_suffix {
+                if commits_text.contains(tid) {
+                    if let Ok(audit) = self.check_strict() {
+                        if audit.passed && audit.failures == 0 {
+                            return Ok(GostPhase::CloseTicket);
+                        }
+                    }
+                    return Ok(GostPhase::Refactor);
+                }
+            } else {
+                return Ok(GostPhase::Refactor);
+            }
+        }
+
+        // 3. Fase 4 comitada (ph4) -> Próxima é Fase 5 (GreenCode)
+        if commits_text.contains("- ph4)") {
+            if let Some(ref tid) = tid_suffix {
+                if commits_text.contains(tid) {
+                    return Ok(GostPhase::GreenCode);
+                }
+            } else {
+                return Ok(GostPhase::GreenCode);
+            }
+        }
+
+        // 4. Fase 3 comitada (ph3) -> Próxima é Fase 4 (RedTest)
+        if commits_text.contains("- ph3)") {
+            if let Some(ref tid) = tid_suffix {
+                if commits_text.contains(tid) {
+                    return Ok(GostPhase::RedTest);
+                }
+            } else {
+                return Ok(GostPhase::RedTest);
+            }
+        }
+
+        // Se branch existe mas não tem commits normativos de fase ainda: Fase 3 (SpecContract)
+        Ok(GostPhase::SpecContract)
     }
 }
 

@@ -61,12 +61,16 @@ async fn run_tui(cli: Cli, repo_dir: PathBuf) -> io::Result<()> {
 
     let mut app = App::with_repo(repo_dir.clone());
 
-    // 1. Detecção dinâmica de branch e inferência de ticket via Git
+    // 1. Detecção dinâmica de branch, carga automática de sessão e inferência de fase GOST via Git
     let git_driver = pult_core::CccpGitDriver::new(&repo_dir);
     if let Ok(branch) = git_driver.current_branch() {
-        let inferred_ticket = pult_tui::app::infer_ticket_from_branch(&branch);
-        app.branch_name = branch.clone();
-        app.ticket_id = inferred_ticket;
+        if cli.resume.is_none() && branch != "main" && branch != "master" {
+            app.auto_sync_branch_state(&branch, &git_driver);
+        } else {
+            let inferred_ticket = pult_tui::app::infer_ticket_from_branch(&branch);
+            app.branch_name = branch.clone();
+            app.ticket_id = inferred_ticket;
+        }
     }
 
     // 2. Precedência de flags explícitas da CLI
