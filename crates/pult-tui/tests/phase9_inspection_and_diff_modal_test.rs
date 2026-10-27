@@ -236,3 +236,32 @@ fn test_render_diff_modal_with_syntax_highlighting() {
     assert!(content.contains("Diff"));
     assert!(content.contains("fn nova"));
 }
+
+#[test]
+fn test_mutation_diff_scrolling_and_empty_state() {
+    let mut app = App::new();
+    app.show_diff_modal = true;
+    app.diff_lines = vec!["line 1".into(), "line 2".into(), "line 3".into()];
+
+    // Scroll down além dos limites
+    app.scroll_diff_down(10);
+    assert_eq!(app.diff_scroll_offset, 2);
+
+    // Scroll up além dos limites
+    app.scroll_diff_up(10);
+    assert_eq!(app.diff_scroll_offset, 0);
+
+    // Renderiza com diff vazio
+    app.diff_lines.clear();
+    let backend = TestBackend::new(100, 25);
+    let mut terminal = Terminal::new(backend).expect("terminal");
+    terminal
+        .draw(|f| {
+            pult_tui::ui::render(&app, f);
+        })
+        .expect("render");
+
+    let buffer = terminal.backend().buffer();
+    let content = format!("{:?}", buffer);
+    assert!(content.contains("Nenhuma alteração"));
+}
