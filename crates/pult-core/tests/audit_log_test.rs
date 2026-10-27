@@ -10,7 +10,10 @@ fn test_audit_logger_creates_file_and_logs_events() {
 
     logger.log("USER_INPUT", "Criar spec da fase 3");
     logger.log("SCOUT_REQUEST", "Prompt com 12 assinaturas AST");
-    logger.log("SCOUT_RESPONSE", "Modelo deepseek-r1:14b retornou 3 símbolos");
+    logger.log(
+        "SCOUT_RESPONSE",
+        "Modelo deepseek-r1:14b retornou 3 símbolos",
+    );
     logger.log("AGY_DISPATCH", "agy --print --dangerously-skip-permissions");
     logger.log("AGY_STREAM", "Chunk inicial de saída");
     logger.log("QUALITY_GATE", "cccp check 100% conforme");

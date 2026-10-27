@@ -521,10 +521,7 @@ async fn run_orchestration_pipeline(
                             }
                         }
                         if let Some(ref l) = audit {
-                            l.log(
-                                "AGY_RESULT",
-                                &format!("Completed exit_code: {}", exit_code),
-                            );
+                            l.log("AGY_RESULT", &format!("Completed exit_code: {}", exit_code));
                         }
                         let _ = tx.send(PipelineEvent::Completed(exit_code)).await;
                         break;

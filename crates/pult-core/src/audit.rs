@@ -33,7 +33,11 @@ impl AuditLogger {
     /// Grava uma entrada de auditoria com timestamp ISO, categoria e mensagem.
     pub fn log(&self, category: &str, message: &str) {
         let _guard = self.lock.lock();
-        if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&self.path) {
+        if let Ok(mut file) = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)
+        {
             let now_sec = crate::domain::session::current_epoch_seconds();
             let timestamp = crate::domain::session::epoch_to_iso(now_sec);
             let _ = writeln!(file, "[{}] [{}] {}", timestamp, category, message);
