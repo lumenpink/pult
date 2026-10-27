@@ -109,3 +109,32 @@ fn test_tab_autocomplete_moves_cursor_to_end_and_includes_auto() {
         cursor.1
     );
 }
+
+#[test]
+fn test_mutation_enter_on_unknown_slash_command() {
+    let mut app = App::new();
+    app.textarea.insert_str("/comando_inexistente");
+
+    let key = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
+    let action = handle_key_event(&mut app, key);
+
+    assert_eq!(action, None);
+    assert!(
+        app.viewport_lines
+            .iter()
+            .any(|l| l.contains("Comando desconhecido: '/comando_inexistente'")),
+        "Deve avisar sobre comando desconhecido no viewport"
+    );
+}
+
+#[test]
+fn test_mutation_tab_autocomplete_unknown_prefix_returns_none() {
+    let mut app = App::new();
+    app.textarea.insert_str("/xyz");
+
+    let key = KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE);
+    let action = handle_key_event(&mut app, key);
+
+    assert_eq!(action, None);
+    assert_eq!(app.textarea.lines()[0], "/xyz");
+}

@@ -88,8 +88,8 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
                     ta.set_cursor_line_style(ratatui::style::Style::default());
                     ta.move_cursor(tui_textarea::CursorMove::End);
                     app.textarea = ta;
-                    return None;
                 }
+                return None;
             }
         }
     }
