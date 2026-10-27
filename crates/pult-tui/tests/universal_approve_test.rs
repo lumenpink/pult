@@ -202,3 +202,50 @@ fn test_quality_gate_lock_blocks_advancement_on_check_failures() {
         "Fase deve permanecer em QualityGate"
     );
 }
+
+#[test]
+fn test_quality_gate_passes_with_warnings_when_failures_zero() {
+    let mut app = App::new();
+    app.set_ticket_info(Some(24), "feat/24-universal-approve", 8);
+    app.set_gost_phase(GostPhase::QualityGate);
+
+    let committed = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let ticket_closed = Arc::new(AtomicBool::new(false));
+
+    // Avisos não devem bloquear o avanço se failures == 0 e passed == true
+    let warning_driver = MockUniversalDriver {
+        current_branch_name: "feat/24-universal-approve".into(),
+        audit_failures: 0,
+        audit_passed: true,
+        committed_phases: Arc::clone(&committed),
+        ticket_closed: Arc::clone(&ticket_closed),
+    };
+
+    let res = app.execute_action(TuiAction::SpecApproved, &warning_driver);
+    assert!(res.is_ok(), "Avisos isolados não devem bloquear avanço");
+    assert_eq!(app.phase(), GostPhase::CloseTicket);
+}
+
+#[test]
+fn test_universal_approve_without_ticket_id_warns_and_advances() {
+    let mut app = App::new();
+    // Sem ticket definido
+    app.set_gost_phase(GostPhase::SpecContract);
+
+    let committed = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let ticket_closed = Arc::new(AtomicBool::new(false));
+
+    let driver = MockUniversalDriver {
+        current_branch_name: "feat/draft-work".into(),
+        audit_failures: 0,
+        audit_passed: true,
+        committed_phases: Arc::clone(&committed),
+        ticket_closed: Arc::clone(&ticket_closed),
+    };
+
+    let res = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(res.is_ok());
+    assert_eq!(app.phase(), GostPhase::RedTest);
+    // Sem ticket, nenhum commit formal foi gravado
+    assert_eq!(committed.lock().unwrap().len(), 0);
+}
