@@ -480,13 +480,7 @@ pub fn infer_ticket_from_branch(branch: &str) -> Option<u32> {
 }
 
 pub const SLASH_COMMANDS: &[&str] = &[
-    "/new",
-    "/approve",
-    "/next",
-    "/finish",
-    "/merge",
-    "/quit",
-    "/help",
+    "/new", "/approve", "/next", "/finish", "/merge", "/quit", "/help",
 ];
 
 /// Autocompleta comandos iniciados por barra ('/').
