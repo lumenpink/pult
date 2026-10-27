@@ -42,3 +42,33 @@ fn test_render_with_busy_state_does_not_panic() {
     let mut terminal = Terminal::new(backend).unwrap();
     terminal.draw(|f| render(&app, f)).unwrap();
 }
+
+
+#[test]
+fn test_mutation_spinner_full_cycle_integrity() {
+    let mut app = App::new();
+    let expected_glyphs = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    for glyph in expected_glyphs {
+        assert_eq!(app.spinner_glyph(), glyph);
+        app.tick_spinner();
+    }
+    // Após 10 ticks, volta para o primeiro
+    assert_eq!(app.spinner_glyph(), "⠋");
+}
+
+#[test]
+fn test_mutation_busy_state_toggling_resets_input() {
+    let mut app = App::new();
+    app.textarea.insert_str("comando importante");
+
+    app.set_busy(true, "Executando etapa 1/4");
+    assert!(app.is_busy);
+    assert_eq!(app.busy_label, "Executando etapa 1/4");
+    assert_eq!(app.submit_input(), None);
+
+    app.set_busy(false, "");
+    assert!(!app.is_busy);
+    assert_eq!(app.submit_input(), Some("comando importante".to_string()));
+    // Submissão bem-sucedida deve esvaziar o textarea
+    assert!(app.textarea.lines()[0].is_empty());
+}
