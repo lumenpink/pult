@@ -107,7 +107,19 @@ async fn run_tui(cli: Cli, repo_dir: PathBuf) -> io::Result<()> {
 
     // 4. Suporte a log de auditoria (-l / --log)
     let audit_logger = cli.log.as_ref().and_then(|log_arg| {
-        let log_path = if std::path::Path::new(log_arg).is_absolute() {
+        let log_path = if log_arg.trim().is_empty()
+            || log_arg == ".antigravity/pult/logs/interacoes.log"
+        {
+            let sess_name = app
+                .session
+                .lock()
+                .ok()
+                .and_then(|l| l.as_ref().map(|s| s.metadata.session_id.clone()))
+                .unwrap_or_else(|| "sessao-inicial".to_string());
+            repo_dir
+                .join(".antigravity/pult/logs")
+                .join(format!("{}.log", sess_name))
+        } else if std::path::Path::new(log_arg).is_absolute() {
             PathBuf::from(log_arg)
         } else {
             repo_dir.join(log_arg)
@@ -344,6 +356,14 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
     let mut injected_context = String::new();
     match scout_result {
         Ok(res) => {
+            if let Some(ref l) = audit {
+                if !res.full_prompt.is_empty() {
+                    l.log("SCOUT_FULL_PROMPT", &res.full_prompt);
+                }
+                if !res.raw_response.is_empty() {
+                    l.log("SCOUT_RAW_RESPONSE", &res.raw_response);
+                }
+            }
             if res.bypassed {
                 let _ = tx.send(PipelineEvent::Log(
                     "  ℹ [2/4] Scout em modo bypass (Ollama inacessível ou sem modelo local carregado).".into(),
@@ -436,6 +456,20 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
             .await;
     }
 
+    if let Some(ref l) = audit {
+        let expected_name = format!("{}.log", session_id);
+        let logs_dir = repo_dir.join(".antigravity/pult/logs");
+        let target_path = logs_dir.join(&expected_name);
+        let cur_path = l.file_path();
+        if cur_path != target_path {
+            if cur_path.exists() {
+                let _ = std::fs::create_dir_all(&logs_dir);
+                let _ = std::fs::rename(&cur_path, &target_path);
+            }
+            let _ = l.retarget(target_path);
+        }
+    }
+
     let _ = tx
         .send(PipelineEvent::Log(format!(
             "  ✓ [3/4] Turno #{} salvo na sessão {}",
@@ -481,6 +515,7 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
             "AGY_DISPATCH",
             &format!("Prompt enviado ao agy: {} bytes", full_prompt.len()),
         );
+        l.log("AGY_FULL_PROMPT", &full_prompt);
     }
 
     let runner = pult_core::AgyRunner::with_options(pult_core::RunnerOptions {
@@ -493,11 +528,14 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
         working_dir: Some(repo_dir.clone()),
     });
 
+    let mut accumulated_agy_response = String::new();
+
     match runner.spawn() {
         Ok((mut stream_rx, child_handle)) => {
             while let Some(event) = stream_rx.recv().await {
                 match event {
                     pult_core::AgyStreamEvent::StdoutChunk(chunk) => {
+                        accumulated_agy_response.push_str(&chunk);
                         {
                             let mut guard = session_arc.lock().unwrap();
                             if let Some(sess) = guard.as_mut() {
@@ -511,6 +549,7 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
                         let _ = tx.send(PipelineEvent::Chunk(chunk)).await;
                     }
                     pult_core::AgyStreamEvent::StderrChunk(chunk) => {
+                        accumulated_agy_response.push_str(&chunk);
                         {
                             let mut guard = session_arc.lock().unwrap();
                             if let Some(sess) = guard.as_mut() {
@@ -549,6 +588,7 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
                             }
                         }
                         if let Some(ref l) = audit {
+                            l.log("AGY_FULL_RESPONSE", &accumulated_agy_response);
                             l.log("AGY_RESULT", &format!("Completed exit_code: {}", exit_code));
                         }
                         let _ = tx.send(PipelineEvent::Completed(exit_code)).await;
@@ -563,6 +603,7 @@ async fn run_orchestration_pipeline(ctx: PipelineContext) {
                             }
                         }
                         if let Some(ref l) = audit {
+                            l.log("AGY_FULL_RESPONSE", &accumulated_agy_response);
                             l.log("AGY_RESULT", &format!("Error: {}", err));
                         }
                         let _ = tx.send(PipelineEvent::Failed(err)).await;

@@ -1,5 +1,4 @@
 use pult_core::audit::AuditLogger;
-use pult_core::scout::models::ScoutResult;
 use pult_core::scout::ScoutEngine;
 use std::fs;
 use tempfile::tempdir;

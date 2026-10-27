@@ -71,6 +71,10 @@ pub struct ScoutResult {
     pub model_used: String,
     pub vram_allocated_bytes: Option<u64>,
     pub bypassed: bool,
+    #[serde(default)]
+    pub full_prompt: String,
+    #[serde(default)]
+    pub raw_response: String,
 }
 
 impl ScoutResult {
@@ -81,6 +85,8 @@ impl ScoutResult {
             model_used: "none".to_string(),
             vram_allocated_bytes: None,
             bypassed: true,
+            full_prompt: String::new(),
+            raw_response: String::new(),
         }
     }
 }

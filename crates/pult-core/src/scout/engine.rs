@@ -99,7 +99,22 @@ impl ScoutEngine {
             model_used: model_used.to_string(),
             vram_allocated_bytes,
             bypassed: false,
+            full_prompt: String::new(),
+            raw_response: raw_response.to_string(),
         })
+    }
+
+    pub fn parse_scout_response_with_payloads(
+        raw_response: &str,
+        model_used: &str,
+        vram_allocated_bytes: Option<u64>,
+        full_prompt: &str,
+        raw_resp: &str,
+    ) -> Result<ScoutResult, ScoutError> {
+        let mut res = Self::parse_scout_response(raw_response, model_used, vram_allocated_bytes)?;
+        res.full_prompt = full_prompt.to_string();
+        res.raw_response = raw_resp.to_string();
+        Ok(res)
     }
 
     pub async fn filter_symbols(
@@ -123,7 +138,13 @@ impl ScoutEngine {
                     .map(|m| m.size_vram)
             });
 
-        Self::parse_scout_response(&response, &self.model_name, vram)
+        Self::parse_scout_response_with_payloads(
+            &response,
+            &self.model_name,
+            vram,
+            &prompt,
+            &response,
+        )
     }
 
     pub async fn filter_with_bypass(
@@ -133,7 +154,12 @@ impl ScoutEngine {
     ) -> Result<ScoutResult, ScoutError> {
         match self.filter_symbols(task_intent, ast_files).await {
             Ok(res) => Ok(res),
-            Err(ScoutError::OllamaUnreachable { .. }) => Ok(ScoutResult::bypassed()),
+            Err(ScoutError::OllamaUnreachable { .. }) => {
+                let ctx = ScoutPromptContext::new(task_intent, ast_files);
+                let mut bypassed = ScoutResult::bypassed();
+                bypassed.full_prompt = ctx.format_prompt();
+                Ok(bypassed)
+            }
             Err(e) => Err(e),
         }
     }
