@@ -166,28 +166,27 @@ async fn run_orchestration_pipeline(
         .await;
 
     let extractor = pult_core::PolyglotAstExtractor::new();
-    let ast_files = match extractor
-        .extract_from_dir(&repo_dir, &[".git", "target", "node_modules", "dist"])
-    {
-        Ok(files) => {
-            let _ = tx
-                .send(PipelineEvent::Log(format!(
-                    "  ✓ [1/4] {} arquivos de AST analisados com sucesso.",
-                    files.len()
-                )))
-                .await;
-            files
-        }
-        Err(e) => {
-            let _ = tx
-                .send(PipelineEvent::Log(format!(
-                    "  ℹ [1/4] Aviso na extração de AST: {} (prosseguindo sem AST prévia)",
-                    e
-                )))
-                .await;
-            Vec::new()
-        }
-    };
+    let ast_files =
+        match extractor.extract_from_dir(&repo_dir, &[".git", "target", "node_modules", "dist"]) {
+            Ok(files) => {
+                let _ = tx
+                    .send(PipelineEvent::Log(format!(
+                        "  ✓ [1/4] {} arquivos de AST analisados com sucesso.",
+                        files.len()
+                    )))
+                    .await;
+                files
+            }
+            Err(e) => {
+                let _ = tx
+                    .send(PipelineEvent::Log(format!(
+                        "  ℹ [1/4] Aviso na extração de AST: {} (prosseguindo sem AST prévia)",
+                        e
+                    )))
+                    .await;
+                Vec::new()
+            }
+        };
 
     // 2. Filtragem Cirúrgica Scout (Ollama Local)
     let _ = tx
@@ -211,10 +210,12 @@ async fn run_orchestration_pipeline(
                 )).await;
             } else {
                 let count = res.symbols.len();
-                let _ = tx.send(PipelineEvent::Log(format!(
-                    "  ✓ [2/4] Scout identificou {} símbolos relevantes (modelo: {}).",
-                    count, res.model_used
-                ))).await;
+                let _ = tx
+                    .send(PipelineEvent::Log(format!(
+                        "  ✓ [2/4] Scout identificou {} símbolos relevantes (modelo: {}).",
+                        count, res.model_used
+                    )))
+                    .await;
                 if !res.yaml_block.is_empty() {
                     injected_context = format!(
                         "\nContexto estrutural de AST selecionado pelo Scout:\n{}\n",
