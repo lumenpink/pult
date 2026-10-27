@@ -82,6 +82,9 @@ fn test_mutation_git_detection_and_resume_edge_cases() {
         infer_ticket_from_branch("user/fix/7-quick_fix_suite"),
         Some(7)
     );
-    assert_eq!(infer_ticket_from_branch("   feat/55-spaces-trimmed   "), Some(55));
+    assert_eq!(
+        infer_ticket_from_branch("   feat/55-spaces-trimmed   "),
+        Some(55)
+    );
     assert_eq!(infer_ticket_from_branch("prefix-without-slash"), None);
 }
