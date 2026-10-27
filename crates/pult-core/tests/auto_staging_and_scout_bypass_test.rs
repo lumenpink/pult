@@ -43,7 +43,7 @@ fn test_repo_driver_commit_phase_auto_stages_untracked_files() {
         .output()
         .expect("git commit");
 
-    let driver = CccpGitDriver::new(repo_path.to_path_buf());
+    let driver = CccpGitDriver::new(repo_path);
 
     // Cria um arquivo untracked
     fs::create_dir_all(repo_path.join("docs")).unwrap();
@@ -57,7 +57,11 @@ fn test_repo_driver_commit_phase_auto_stages_untracked_files() {
         "especificar contrato",
         None,
     );
-    assert!(res.is_ok(), "commit_phase falhou ao comitar arquivo untracked: {:?}", res);
+    assert!(
+        res.is_ok(),
+        "commit_phase falhou ao comitar arquivo untracked: {:?}",
+        res
+    );
 
     // Verifica que o arquivo agora está comitado e o working tree está limpo
     let status_output = std::process::Command::new("git")
@@ -100,9 +104,16 @@ async fn test_scout_bypass_on_short_confirmations() {
         reduced_byte_count: 10,
     }];
 
-    for prompt in ["y", "Y", "yes", "sim", "Sim", "s", "ok", "OK.", "concordo", "aprovado"] {
+    for prompt in [
+        "y", "Y", "yes", "sim", "Sim", "s", "ok", "OK.", "concordo", "aprovado",
+    ] {
         let res = engine.filter_with_bypass(prompt, &dummy_ast).await;
-        assert!(res.is_ok(), "Falha no bypass para prompt '{}': {:?}", prompt, res);
+        assert!(
+            res.is_ok(),
+            "Falha no bypass para prompt '{}': {:?}",
+            prompt,
+            res
+        );
         let scout_result = res.unwrap();
         assert!(
             scout_result.symbols.is_empty(),
