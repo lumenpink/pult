@@ -962,7 +962,11 @@ impl App {
 
     pub fn toggle_auto_mode(&mut self) -> bool {
         self.is_auto_mode = !self.is_auto_mode;
-        let status = if self.is_auto_mode { "ATIVADO" } else { "DESATIVADO" };
+        let status = if self.is_auto_mode {
+            "ATIVADO"
+        } else {
+            "DESATIVADO"
+        };
         self.append_viewport_line(&format!("★ [MODO] Modo Auto {}.", status));
         self.is_auto_mode
     }

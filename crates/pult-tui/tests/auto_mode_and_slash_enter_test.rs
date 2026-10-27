@@ -44,7 +44,10 @@ fn test_ctrl_x_and_slash_auto_toggle_auto_mode() {
     // 2. Testa comando /auto
     let action_cmd = app.execute_slash_command("/auto");
     assert_eq!(action_cmd, Some(TuiAction::AutoModeToggled(false)));
-    assert!(!app.is_auto_mode, "/auto deve alternar de volta para manual");
+    assert!(
+        !app.is_auto_mode,
+        "/auto deve alternar de volta para manual"
+    );
 }
 
 #[test]

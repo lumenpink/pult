@@ -156,10 +156,7 @@ fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        Span::styled(
-            " [MANUAL] ",
-            Style::default().fg(Color::DarkGray),
-        )
+        Span::styled(" [MANUAL] ", Style::default().fg(Color::DarkGray))
     };
     let paragraph = Paragraph::new(Line::from(vec![help_span, Span::raw(" "), mode_span]));
     frame.render_widget(paragraph, area);
