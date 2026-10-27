@@ -31,6 +31,7 @@ pub struct App {
     pub show_help: bool,
     pub pending_dispatch: Option<String>,
     pub busy_start_time: Option<std::time::Instant>,
+    pub is_auto_mode: bool,
 }
 
 impl Default for App {
@@ -72,6 +73,7 @@ impl App {
             show_help: false,
             pending_dispatch: None,
             busy_start_time: None,
+            is_auto_mode: false,
         }
     }
 
@@ -804,9 +806,9 @@ impl App {
                 self.quit();
                 Ok("quit".into())
             }
-            crate::event::TuiAction::FocusToggled | crate::event::TuiAction::Scrolled => {
-                Ok("navegacao".into())
-            }
+            crate::event::TuiAction::FocusToggled
+            | crate::event::TuiAction::Scrolled
+            | crate::event::TuiAction::AutoModeToggled(_) => Ok("navegacao".into()),
         }
     }
 
@@ -827,6 +829,10 @@ impl App {
             "/help" => {
                 self.show_help = !self.show_help;
                 Some(crate::event::TuiAction::HelpToggled)
+            }
+            "/auto" => {
+                let active = self.toggle_auto_mode();
+                Some(crate::event::TuiAction::AutoModeToggled(active))
             }
             "/new" => {
                 self.reset_session();
@@ -954,6 +960,13 @@ impl App {
         }
     }
 
+    pub fn toggle_auto_mode(&mut self) -> bool {
+        self.is_auto_mode = !self.is_auto_mode;
+        let status = if self.is_auto_mode { "ATIVADO" } else { "DESATIVADO" };
+        self.append_viewport_line(&format!("★ [MODO] Modo Auto {}.", status));
+        self.is_auto_mode
+    }
+
     pub fn submit_input(&mut self) -> Option<String> {
         if self.is_busy {
             return None;
@@ -988,7 +1001,7 @@ pub fn infer_ticket_from_branch(branch: &str) -> Option<u32> {
 }
 
 pub const SLASH_COMMANDS: &[&str] = &[
-    "/branch", "/new", "/approve", "/next", "/finish", "/merge", "/quit", "/help",
+    "/auto", "/branch", "/new", "/approve", "/next", "/finish", "/merge", "/quit", "/help",
 ];
 
 /// Autocompleta comandos iniciados por barra ('/').

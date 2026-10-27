@@ -17,6 +17,7 @@ pub enum TuiAction {
     HelpToggled,
     NewSession,
     BranchChanged(String),
+    AutoModeToggled(bool),
 }
 
 pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
@@ -49,10 +50,11 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
                 return None;
             }
             KeyCode::Char('p') => {
-                if app.gost_phase == GostPhase::SpecContract {
-                    return Some(TuiAction::SpecApproved);
-                }
-                return None;
+                return Some(TuiAction::SpecApproved);
+            }
+            KeyCode::Char('x') => {
+                let active = app.toggle_auto_mode();
+                return Some(TuiAction::AutoModeToggled(active));
             }
             KeyCode::Char('n') => {
                 if let Ok(next) = app.advance_gost_phase() {
@@ -84,6 +86,7 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
                 if let Some(completed) = crate::app::autocomplete_slash_command(trimmed) {
                     let mut ta = tui_textarea::TextArea::from([completed.to_string()]);
                     ta.set_cursor_line_style(ratatui::style::Style::default());
+                    ta.move_cursor(tui_textarea::CursorMove::End);
                     app.textarea = ta;
                     return None;
                 }
@@ -120,6 +123,15 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
             _ => None,
         },
         Focus::Editor => {
+            // Se for pressionado Enter em uma linha iniciando com '/', submete e executa o slash command diretamente
+            if key.code == KeyCode::Enter && app.textarea.lines().len() <= 1 {
+                let first_line = app.textarea.lines().first().map(|s| s.trim()).unwrap_or("");
+                if first_line.starts_with('/') {
+                    if let Some(content) = app.submit_input() {
+                        return app.execute_slash_command(content.trim());
+                    }
+                }
+            }
             app.textarea.input(Input::from(key));
             None
         }

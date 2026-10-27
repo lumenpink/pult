@@ -265,7 +265,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
                                 }
                             }
                         }
-                        TuiAction::HelpToggled => {}
+                        TuiAction::HelpToggled | TuiAction::AutoModeToggled(_) => {}
                         TuiAction::Quit => {
                             app.quit();
                         }

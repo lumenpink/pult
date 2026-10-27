@@ -141,14 +141,27 @@ fn render_editor(app: &App, frame: &mut Frame, area: Rect) {
     frame.render_widget(&textarea, area);
 }
 
-fn render_footer(_app: &App, frame: &mut Frame, area: Rect) {
-    let span = Span::styled(
+fn render_footer(app: &App, frame: &mut Frame, area: Rect) {
+    let help_span = Span::styled(
         " [Ctrl+H: Ajuda] ",
         Style::default()
             .fg(Color::Yellow)
             .add_modifier(Modifier::BOLD),
     );
-    let paragraph = Paragraph::new(Line::from(vec![span]));
+    let mode_span = if app.is_auto_mode {
+        Span::styled(
+            " [AUTO] ",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )
+    } else {
+        Span::styled(
+            " [MANUAL] ",
+            Style::default().fg(Color::DarkGray),
+        )
+    };
+    let paragraph = Paragraph::new(Line::from(vec![help_span, Span::raw(" "), mode_span]));
     frame.render_widget(paragraph, area);
 }
 
@@ -185,6 +198,11 @@ fn render_help_modal(_app: &App, frame: &mut Frame, area: Rect) {
         Line::from(vec![Span::raw(
             "────────────────────────────────────────────────────────────",
         )]),
+        Line::from(vec![
+            Span::styled("/auto     ", Style::default().fg(Color::Green)),
+            Span::styled("Ctrl+X   ", Style::default().fg(Color::Cyan)),
+            Span::raw("Alternar entre modo [AUTO] e [MANUAL]"),
+        ]),
         Line::from(vec![
             Span::styled("/branch   ", Style::default().fg(Color::Green)),
             Span::styled("         ", Style::default().fg(Color::Cyan)),
