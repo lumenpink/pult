@@ -107,6 +107,11 @@ async fn test_scout_bypass_on_short_confirmations() {
     for prompt in [
         "y", "Y", "yes", "sim", "Sim", "s", "ok", "OK.", "concordo", "aprovado",
     ] {
+        assert!(
+            ScoutEngine::is_short_confirmation(prompt),
+            "Prompt '{}' deveria ser identificado como confirmação",
+            prompt
+        );
         let res = engine.filter_with_bypass(prompt, &dummy_ast).await;
         assert!(
             res.is_ok(),
@@ -121,5 +126,18 @@ async fn test_scout_bypass_on_short_confirmations() {
             prompt
         );
         assert!(scout_result.bypassed, "Deve estar marcado como bypassed");
+    }
+
+    // Garante que prompts normais com tarefas NÃO são falsos positivos de confirmação
+    for normal_task in [
+        "gere um script shell que conte de 00 a 10",
+        "criar teste de regressão para o parser",
+        "implementar funcao de soma y e x",
+    ] {
+        assert!(
+            !ScoutEngine::is_short_confirmation(normal_task),
+            "Tarefa '{}' não pode ser tratada como confirmação curta",
+            normal_task
+        );
     }
 }
