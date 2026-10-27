@@ -34,10 +34,7 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) -> Option<TuiAction> {
                 return None;
             }
             KeyCode::Char('p') => {
-                if app.approve_spec_contract().is_ok() {
-                    app.append_viewport_line(
-                        "★ [GOST] Especificação aprovada via Ctrl+P. Avançando para FASE 4 (Red Test).",
-                    );
+                if app.gost_phase == GostPhase::SpecContract {
                     return Some(TuiAction::SpecApproved);
                 }
                 return None;

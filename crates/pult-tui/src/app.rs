@@ -208,6 +208,121 @@ impl App {
         format!("{}\n{}", header, body)
     }
 
+    /// Executa ações contextuais da máquina GOST (Ctrl+P, Ctrl+N, Ctrl+G, Ctrl+M)
+    /// com validações estritas de conformidade, guarda da Fase 3 e fechamento de ticket.
+    pub fn execute_action(
+        &mut self,
+        action: crate::event::TuiAction,
+        driver: &dyn pult_core::RepoDriver,
+    ) -> Result<String, String> {
+        match action {
+            crate::event::TuiAction::SpecApproved => {
+                if self.gost_phase != GostPhase::SpecContract {
+                    let msg = "Apenas a Fase 3 (Doc / Spec Contract) pode ser aprovada para Red Test"
+                        .to_string();
+                    self.append_viewport_line(&format!("⚠ {}", msg));
+                    return Err(msg);
+                }
+
+                // Obtém status de arquivos modificados via driver
+                let status = driver.status().map_err(|e| e.to_string())?;
+                let file_refs: Vec<&str> = status
+                    .modified_files
+                    .iter()
+                    .chain(status.untracked_files.iter())
+                    .map(|s| s.as_str())
+                    .collect();
+
+                // Valida guarda estrita da Fase 3
+                if let Err(veto_err) = self.check_phase3_guard(&file_refs) {
+                    self.append_viewport_line(&format!("❌ {}", veto_err));
+                    return Err(veto_err);
+                }
+
+                // Aprova e avança para Fase 4
+                let next = self.approve_spec_contract().map_err(|e| e.to_string())?;
+                let ok_msg =
+                    "★ [GOST] Especificação aprovada via Ctrl+P. Avançando para FASE 4 (Red Test)."
+                        .to_string();
+                self.append_viewport_line(&ok_msg);
+
+                // Sincroniza metadados da sessão ativa
+                if let Ok(mut lock) = self.session.lock() {
+                    if let Some(ref mut sess) = *lock {
+                        sess.metadata.gost.phase = next.number();
+                    }
+                }
+
+                Ok(ok_msg)
+            }
+            crate::event::TuiAction::PhaseAdvanced(next) => {
+                let msg = format!(
+                    "★ [GOST] Avanço para FASE {}: {}.",
+                    next.number(),
+                    next.name()
+                );
+                self.append_viewport_line(&msg);
+
+                // Sincroniza metadados da sessão ativa
+                if let Ok(mut lock) = self.session.lock() {
+                    if let Some(ref mut sess) = *lock {
+                        sess.metadata.gost.phase = next.number();
+                    }
+                }
+                Ok(msg)
+            }
+            crate::event::TuiAction::FinishTriggered => {
+                let chronicle = self.compile_closing_chronicle("tui", "finalizar ciclo GOST");
+                self.append_viewport_line(&chronicle);
+
+                if let Some(ticket_id) = self.ticket_id {
+                    match driver.close_ticket(ticket_id) {
+                        Ok(()) => {
+                            let msg =
+                                format!("✓ Ticket #{} encerrado com sucesso na forja.", ticket_id);
+                            self.append_viewport_line(&msg);
+                        }
+                        Err(e) => {
+                            let msg = format!("⚠ Aviso ao encerrar ticket #{}: {}", ticket_id, e);
+                            self.append_viewport_line(&msg);
+                        }
+                    }
+                }
+                Ok(chronicle)
+            }
+            crate::event::TuiAction::MergeTriggered => {
+                self.append_viewport_line(&format!(
+                    "☭ Mesclando branch '{}' via CCCP...",
+                    self.branch_name
+                ));
+                match driver.merge_branch(&self.branch_name) {
+                    Ok(()) => {
+                        let msg = format!(
+                            "✓ Branch '{}' mesclada com sucesso via cccp merge.",
+                            self.branch_name
+                        );
+                        self.append_viewport_line(&msg);
+                        Ok(msg)
+                    }
+                    Err(e) => {
+                        let msg =
+                            format!("❌ Falha ao mesclar branch '{}': {}", self.branch_name, e);
+                        self.append_viewport_line(&msg);
+                        Err(msg)
+                    }
+                }
+            }
+            crate::event::TuiAction::Submit(text) => Ok(text),
+            crate::event::TuiAction::Quit => {
+                self.quit();
+                Ok("quit".into())
+            }
+            crate::event::TuiAction::FocusToggled | crate::event::TuiAction::Scrolled => {
+                Ok("navegacao".into())
+            }
+        }
+    }
+
     pub fn toggle_focus(&mut self) {
         self.focus = match self.focus {
             Focus::Editor => Focus::Viewport,

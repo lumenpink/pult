@@ -43,6 +43,8 @@ fn test_approve_spec_contract_shortcut_ctrl_p() {
     let action = handle_key_event(&mut app, key_ctrl_p);
 
     assert_eq!(action, Some(TuiAction::SpecApproved));
+    let next = app.approve_spec_contract().expect("approve");
+    assert_eq!(next, GostPhase::RedTest);
     assert_eq!(app.phase(), GostPhase::RedTest);
 
     // Tentar aprovar fora da Fase 3 deve falhar

@@ -43,6 +43,9 @@ pub trait RepoDriver: Send + Sync {
 
     /// Executa o merge com validação de tag de fechamento (`cccp merge <branch>`).
     fn merge_branch(&self, branch: &str) -> Result<(), DriverError>;
+
+    /// Encerra um ticket na forja remota (`cccp ticket close <id>`).
+    fn close_ticket(&self, ticket_id: u32) -> Result<(), DriverError>;
 }
 
 /// Implementação padrão que delega ao binário `cccp` e comandos Git nativos.
@@ -294,6 +297,11 @@ impl RepoDriver for CccpGitDriver {
 
     fn merge_branch(&self, branch: &str) -> Result<(), DriverError> {
         self.run_cccp(&["merge", branch])?;
+        Ok(())
+    }
+
+    fn close_ticket(&self, ticket_id: u32) -> Result<(), DriverError> {
+        self.run_cccp(&["ticket", "close", &ticket_id.to_string()])?;
         Ok(())
     }
 }

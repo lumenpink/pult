@@ -166,21 +166,43 @@ async fn run_loop<B: ratatui::backend::Backend>(
 
         if event::poll(Duration::from_millis(30))? {
             if let Event::Key(key) = event::read()? {
-                if let Some(TuiAction::Submit(text)) = handle_key_event(app, key) {
-                    if !app.is_busy {
-                        app.append_viewport_line(&format!("> {}", text));
-                        app.set_busy(true, "Iniciando...");
+                if let Some(action) = handle_key_event(app, key) {
+                    let git_driver = pult_core::CccpGitDriver::new(&app.repo_path);
+                    match action {
+                        TuiAction::Submit(text) => {
+                            if !app.is_busy {
+                                app.append_viewport_line(&format!("> {}", text));
+                                app.set_busy(true, "Iniciando...");
 
-                        let tx = pipeline_tx.clone();
-                        let repo = app.repo_path.clone();
-                        let tid = app.ticket_id;
-                        let branch = app.branch_name.clone();
-                        let session_arc = app.session.clone();
+                                let tx = pipeline_tx.clone();
+                                let repo = app.repo_path.clone();
+                                let tid = app.ticket_id;
+                                let branch = app.branch_name.clone();
+                                let session_arc = app.session.clone();
 
-                        tokio::spawn(async move {
-                            run_orchestration_pipeline(text, repo, tid, branch, session_arc, tx)
-                                .await;
-                        });
+                                tokio::spawn(async move {
+                                    run_orchestration_pipeline(
+                                        text,
+                                        repo,
+                                        tid,
+                                        branch,
+                                        session_arc,
+                                        tx,
+                                    )
+                                    .await;
+                                });
+                            }
+                        }
+                        TuiAction::SpecApproved
+                        | TuiAction::PhaseAdvanced(_)
+                        | TuiAction::FinishTriggered
+                        | TuiAction::MergeTriggered => {
+                            let _ = app.execute_action(action, &git_driver);
+                        }
+                        TuiAction::Quit => {
+                            app.quit();
+                        }
+                        TuiAction::FocusToggled | TuiAction::Scrolled => {}
                     }
                 }
             }
