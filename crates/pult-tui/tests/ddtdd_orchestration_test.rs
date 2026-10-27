@@ -223,7 +223,10 @@ fn test_mutation_all_nine_phase_directives_distinct_content() {
         let phase = GostPhase::from_u8(n).expect("valid phase");
         let directive = phase.agent_directive("work-branch");
         assert!(!directive.trim().is_empty());
-        assert!(seen_directives.insert(directive), "Diretiva da fase {} não deve ser duplicada", n);
+        assert!(
+            seen_directives.insert(directive),
+            "Diretiva da fase {} não deve ser duplicada",
+            n
+        );
     }
 }
-
