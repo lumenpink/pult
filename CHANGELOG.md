@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `crates/pult-tui`: Modo auto com atalho `Ctrl+X` e comando `/auto`, indicador `[AUTO]` vs `[MANUAL]` no rodapé, envio direto com `Enter` para slash commands, autocomplete com `Tab` corrigido com cursor no final e `Ctrl+P` universal em todas as fases (closes #30).
 - `crates/pult-core`: Staging automático de arquivos untracked e modificados via git add antes de commits de fases, e bypass imediato de LLM no Scout para prompts curtos de confirmação ou bases sem arquivos AST (closes #29).
 - Inicialização do repositório em conformidade com o padrão GOST (#1).
 - `crates/pult-core`: Entidades centrais de domínio (`GostPhase`, `Session`, `Turn`, `Actor`, `TurnStatus`) (#2).

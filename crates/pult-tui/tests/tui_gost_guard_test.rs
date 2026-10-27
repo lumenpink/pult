@@ -47,9 +47,12 @@ fn test_approve_spec_contract_shortcut_ctrl_p() {
     assert_eq!(next, GostPhase::RedTest);
     assert_eq!(app.phase(), GostPhase::RedTest);
 
-    // Tentar aprovar fora da Fase 3 deve falhar
-    let action_invalid = handle_key_event(&mut app, key_ctrl_p);
-    assert_ne!(action_invalid, Some(TuiAction::SpecApproved));
+    // O atalho Ctrl+P é universal e agora emite SpecApproved em qualquer fase
+    let action_any = handle_key_event(&mut app, key_ctrl_p);
+    assert_eq!(action_any, Some(TuiAction::SpecApproved));
+
+    // Mas approve_spec_contract diretamente fora da Fase 3 retorna erro de contrato
+    assert!(app.approve_spec_contract().is_err());
 }
 
 #[test]
