@@ -2,12 +2,12 @@
 
 use clap::Parser;
 
-/// Interface de linha de comando soberana do PULT.
+/// Interface de linha de comando autônoma do PULT.
 #[derive(Parser, Debug, Clone, PartialEq, Eq)]
 #[command(
     name = "pult",
     version = pult_core::VERSION,
-    about = "Estação TUI soberana para terminal"
+    about = "Estação TUI autônoma para terminal"
 )]
 pub struct Cli {
     /// Repositório alvo (caminho absoluto, relativo, owner/repo ou repo)

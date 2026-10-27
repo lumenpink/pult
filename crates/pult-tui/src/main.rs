@@ -1,4 +1,4 @@
-//! PULT (Пульт) — Estação de trabalho TUI soberana para terminal.
+//! PULT (Пульт) — Estação de trabalho TUI autônoma para terminal.
 
 use clap::Parser;
 use crossterm::{
@@ -101,7 +101,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
                     app.append_viewport_line(&msg);
                 }
                 PipelineEvent::Chunk(chunk) => {
-                    app.append_viewport_text(&chunk);
+                    app.append_stream_chunk(&chunk);
                 }
                 PipelineEvent::StepBusy(label) => {
                     app.busy_label = label;
@@ -277,13 +277,13 @@ async fn run_orchestration_pipeline(
             .await;
     }
 
-    // 4. Execução do Agente Soberano (agy)
+    // 4. Execução do Agente Externo (agy)
     let _ = tx
         .send(PipelineEvent::StepBusy("Agente (agy)...".into()))
         .await;
     let _ = tx
         .send(PipelineEvent::Log(
-            "☭ [PULT] [4/4] Disparando agente soberano (agy)...".into(),
+            "☭ [PULT] [4/4] Disparando Agente Externo (agy)...".into(),
         ))
         .await;
 

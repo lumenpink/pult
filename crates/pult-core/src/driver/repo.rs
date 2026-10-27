@@ -4,7 +4,7 @@ use crate::driver::models::{GitStatus, QualityAudit};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// Contrato soberano para execução de operações no repositório (Git / CCCP).
+/// Driver para execução de operações no repositório (Git / CCCP).
 pub trait RepoDriver: Send + Sync {
     /// Obtém o nome da branch Git atualmente ativa.
     fn current_branch(&self) -> Result<String, DriverError>;
@@ -45,7 +45,7 @@ pub trait RepoDriver: Send + Sync {
     fn merge_branch(&self, branch: &str) -> Result<(), DriverError>;
 }
 
-/// Implementação padrão que delega ao binário soberano `cccp` e comandos Git nativos.
+/// Implementação padrão que delega ao binário `cccp` e comandos Git nativos.
 pub struct CccpGitDriver {
     pub workspace_root: PathBuf,
 }

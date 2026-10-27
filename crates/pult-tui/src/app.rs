@@ -24,6 +24,7 @@ pub struct App {
     pub is_busy: bool,
     pub spinner_idx: usize,
     pub busy_label: String,
+    pub is_line_open: bool,
 }
 
 impl Default for App {
@@ -60,6 +61,7 @@ impl App {
             is_busy: false,
             spinner_idx: 0,
             busy_label: String::new(),
+            is_line_open: false,
         }
     }
 
@@ -129,7 +131,7 @@ impl App {
         let header = format!("docs({}): {}{}", scope, summary, ticket_str);
 
         let mut body = String::new();
-        body.push_str("\n### Crônica da Entrega Soberana (GOST DD-TDD)\n");
+        body.push_str("\n### Crônica da Entrega (GOST DD-TDD)\n");
         if let Some(id) = self.ticket_id {
             body.push_str(&format!("- Ticket: #{}\n", id));
         }
@@ -169,6 +171,34 @@ impl App {
 
     pub fn append_viewport_line(&mut self, line: &str) {
         self.viewport_lines.push(line.to_string());
+        self.is_line_open = false;
+    }
+
+    pub fn append_stream_chunk(&mut self, chunk: &str) {
+        if chunk.is_empty() {
+            return;
+        }
+
+        let ends_with_newline = chunk.ends_with('\n');
+        let parts: Vec<&str> = chunk.split('\n').collect();
+
+        for (i, part) in parts.iter().enumerate() {
+            if i == parts.len() - 1 && ends_with_newline && part.is_empty() {
+                continue;
+            }
+
+            if i == 0 && self.is_line_open {
+                if let Some(last) = self.viewport_lines.last_mut() {
+                    last.push_str(part);
+                } else {
+                    self.viewport_lines.push(part.to_string());
+                }
+            } else {
+                self.viewport_lines.push(part.to_string());
+            }
+        }
+
+        self.is_line_open = !ends_with_newline;
     }
 
     pub fn append_viewport_text(&mut self, text: &str) {

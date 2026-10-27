@@ -29,7 +29,7 @@ fn test_ci_workflow_conforms_to_forgejo_cluster() {
     );
     assert!(
         content.contains("image: gambi.2lp.in/lumen/gost-ci-cross:latest"),
-        "Workflow deve executar dentro do container soberano 'gost-ci-cross:latest'"
+        "Workflow deve executar dentro do container canônico 'gost-ci-cross:latest'"
     );
 
     // Exige validação de qualidade e compilação
