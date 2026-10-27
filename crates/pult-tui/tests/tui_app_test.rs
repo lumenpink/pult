@@ -74,7 +74,7 @@ fn test_ctrl_q_signals_quit() {
 
 #[test]
 fn test_render_split_viewport_in_test_backend() {
-    let backend = TestBackend::new(100, 30);
+    let backend = TestBackend::new(120, 30);
     let mut terminal = Terminal::new(backend).expect("terminal");
 
     let mut app = App::new();

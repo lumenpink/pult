@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `crates/pult-core`: Staging automático de arquivos untracked e modificados via git add antes de commits de fases, e bypass imediato de LLM no Scout para prompts curtos de confirmação ou bases sem arquivos AST (closes #29).
 - Inicialização do repositório em conformidade com o padrão GOST (#1).
 - `crates/pult-core`: Entidades centrais de domínio (`GostPhase`, `Session`, `Turn`, `Actor`, `TurnStatus`) (#2).
 - `crates/pult-core`: Parser e serializador canônico de sessões em Markdown com Frontmatter YAML e turnos delimitados por comentários HTML (#2).
