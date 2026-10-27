@@ -181,3 +181,69 @@ fn test_phase1_approve_automates_phase2_transition_to_phase3() {
     assert_eq!(app.ticket_id(), Some(42));
     assert_eq!(app.branch_name(), "feat/42-rate-limiting");
 }
+
+#[test]
+fn test_mutation_parse_ticket_creation_output_edge_cases() {
+    use pult_core::driver::parse_ticket_creation_output;
+
+    // Mutante 1: Saída vazia
+    assert_eq!(parse_ticket_creation_output(""), None);
+
+    // Mutante 2: Saída com apenas ID e sem linha de Branch explícita
+    let out_only_id = "Created ticket #77 successfully\n";
+    let parsed = parse_ticket_creation_output(out_only_id);
+    assert_eq!(parsed, Some((77, "feat/77-ticket".to_string())));
+
+    // Mutante 3: Saída completa com branch customizada
+    let out_full = "Created ticket #105 successfully:\n • Branch: 105-fix-jwt-overflow\n";
+    let parsed = parse_ticket_creation_output(out_full);
+    assert_eq!(parsed, Some((105, "105-fix-jwt-overflow".to_string())));
+}
+
+#[test]
+fn test_mutation_history_formatting_window_and_incomplete_turns() {
+    // Mutante 1: Turnos incompletos não devem figurar no histórico
+    let mut session = Session::new_draft("draft-test");
+    session.add_turn(
+        Actor::User,
+        "Prompt em progresso".to_string(),
+        TurnStatus::InProgress,
+    );
+    let formatted = pult_tui::app::format_prompt_with_history(&session, "novo prompt", "");
+    assert!(!formatted.contains("--- Contexto Histórico Recente da Sessão ---"));
+
+    // Mutante 2: Mais de 6 turnos são truncados para os 6 mais recentes
+    for i in 1..=10 {
+        session.add_turn(
+            Actor::User,
+            format!("Pergunta {}", i),
+            TurnStatus::Completed,
+        );
+    }
+    let formatted = pult_tui::app::format_prompt_with_history(&session, "pergunta final", "");
+    assert!(formatted.contains("Pergunta 10"));
+    assert!(formatted.contains("Pergunta 5"));
+    assert!(!formatted.contains("Pergunta 1\n"));
+}
+
+#[test]
+fn test_mutation_synthesize_ticket_data_fallbacks() {
+    let app = App::new();
+    // App sem sessão
+    let (title, body) = app.synthesize_ticket_data();
+    assert_eq!(title, "feat: demanda do usuario");
+    assert!(body.contains("## Tasks / DD-TDD Checklist"));
+
+    // App com prompt longo
+    let app_with_session = App::new();
+    let mut session = Session::new_draft("long-draft");
+    let long_text = "Esta é uma descrição extremamente longa de uma funcionalidade que deve ser truncada no título";
+    session.add_turn(Actor::User, long_text.to_string(), TurnStatus::Completed);
+    app_with_session.set_session(session);
+
+    let (title, _) = app_with_session.synthesize_ticket_data();
+    assert!(
+        title.len() <= 50,
+        "Título deve ser truncado a partir dos primeiros 40 chars"
+    );
+}

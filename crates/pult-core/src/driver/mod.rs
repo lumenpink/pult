@@ -4,4 +4,4 @@ pub mod repo;
 
 pub use error::DriverError;
 pub use models::{GitStatus, QualityAudit, TicketDetails};
-pub use repo::{CccpGitDriver, RepoDriver};
+pub use repo::{parse_ticket_creation_output, CccpGitDriver, RepoDriver};
