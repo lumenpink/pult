@@ -6,7 +6,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use pult_core::{AstExtractor, SessionStorage};
+use pult_core::{AstExtractor, RepoDriver, SessionStorage};
 use pult_tui::app::App;
 use pult_tui::cli::Cli;
 use pult_tui::event::{handle_key_event, TuiAction};
@@ -59,11 +59,50 @@ async fn run_tui(cli: Cli, repo_dir: PathBuf) -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::with_repo(repo_dir);
+    let mut app = App::with_repo(repo_dir.clone());
+
+    // 1. Detecção dinâmica de branch e inferência de ticket via Git
+    let git_driver = pult_core::CccpGitDriver::new(&repo_dir);
+    if let Ok(branch) = git_driver.current_branch() {
+        let inferred_ticket = pult_tui::app::infer_ticket_from_branch(&branch);
+        app.branch_name = branch.clone();
+        app.ticket_id = inferred_ticket;
+    }
+
+    // 2. Precedência de flags explícitas da CLI
     if let Some(id) = cli.ticket {
-        app.set_ticket_info(Some(id), "feat/active", 1);
+        app.ticket_id = Some(id);
     } else if let Some(ref desc) = cli.draft {
         app.append_viewport_line(&format!("--- Rascunho: {} ---", desc));
+    }
+
+    // 3. Suporte a restauração de sessão prévia (--resume / -s)
+    if let Some(ref resume_str) = cli.resume {
+        let resume_path = std::path::Path::new(resume_str);
+        let candidate = if resume_path.is_file() {
+            resume_path.to_path_buf()
+        } else {
+            repo_dir.join(".antigravity/pult/sessions").join(resume_str)
+        };
+        if candidate.is_file() {
+            if let Err(e) = app.load_session_file(&candidate) {
+                app.append_viewport_line(&format!(
+                    "❌ Falha ao carregar sessão '{}': {}",
+                    candidate.display(),
+                    e
+                ));
+            } else {
+                app.append_viewport_line(&format!(
+                    "✓ Sessão restaurada a partir de '{}'.",
+                    candidate.display()
+                ));
+            }
+        } else {
+            app.append_viewport_line(&format!(
+                "⚠ Arquivo de sessão '{}' não encontrado.",
+                resume_str
+            ));
+        }
     }
 
     let res = run_loop(&mut terminal, &mut app).await;

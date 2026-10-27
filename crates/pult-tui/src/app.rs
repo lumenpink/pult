@@ -109,6 +109,46 @@ impl App {
         }
     }
 
+    /// Carrega uma sessão gravada em disco a partir de um caminho de arquivo,
+    /// restaurando o histórico de turnos no viewport e sincronizando os metadados GOST.
+    pub fn load_session_file(&mut self, path: &std::path::Path) -> std::io::Result<()> {
+        let content = std::fs::read_to_string(path)?;
+        let session = Session::from_markdown(&content)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
+
+        if let Some(ref ticket) = session.metadata.ticket {
+            self.ticket_id = Some(ticket.id);
+            self.branch_name = ticket.branch.clone();
+        }
+
+        if let Ok(phase) = session.gost_phase() {
+            self.gost_phase = phase;
+        }
+
+        self.viewport_lines.clear();
+        for turn in &session.turns {
+            match turn.actor {
+                pult_core::Actor::User => {
+                    self.append_viewport_line(&format!("> {}", turn.content));
+                }
+                pult_core::Actor::Scout => {
+                    self.append_viewport_line("☭ [PULT] Contexto filtrado pelo Scout:");
+                    for line in turn.content.lines() {
+                        self.append_viewport_line(line);
+                    }
+                }
+                pult_core::Actor::Agy => {
+                    for line in turn.content.lines() {
+                        self.append_viewport_line(line);
+                    }
+                }
+            }
+        }
+
+        self.set_session(session);
+        Ok(())
+    }
+
     pub fn advance_gost_phase(&mut self) -> Result<GostPhase, &'static str> {
         let current_num = self.gost_phase.number();
         if current_num >= 9 {
@@ -260,4 +300,19 @@ impl App {
     pub fn quit(&mut self) {
         self.should_quit = true;
     }
+}
+
+/// Infere o identificador numérico do ticket a partir do nome da branch.
+/// Suporta convenções como `feat/<id>-*`, `fix/<id>-*`, `docs/<id>-*` ou `<id>-*`.
+pub fn infer_ticket_from_branch(branch: &str) -> Option<u32> {
+    let clean = branch.trim();
+    if clean.is_empty() {
+        return None;
+    }
+    let after_slash = match clean.rfind('/') {
+        Some(idx) => &clean[idx + 1..],
+        None => clean,
+    };
+    let token = after_slash.split('-').next()?;
+    token.parse::<u32>().ok()
 }
