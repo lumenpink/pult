@@ -171,3 +171,59 @@ fn test_quality_check_triggered_on_phase_transitions() {
     let last_logs = app.viewport_lines.join("\n");
     assert!(last_logs.contains("Conformidade"));
 }
+
+#[test]
+fn test_mutation_master_branch_protection_and_spec_approved() {
+    let mut app = App::new();
+    app.branch_name = "master".to_string();
+    app.set_gost_phase(GostPhase::SpecContract);
+
+    let driver = MockDriver::default();
+
+    // Aprovar spec diretamente na master DEVE ser vetado pelo bloqueio de governança
+    let res = app.execute_action(TuiAction::SpecApproved, &driver);
+    assert!(res.is_err());
+    let err_msg = res.unwrap_err();
+    assert!(err_msg.contains("Bloqueio de Governança") && err_msg.contains("master"));
+}
+
+#[test]
+fn test_mutation_branch_slash_command_edge_cases() {
+    let mut app = App::new();
+
+    // Comando /branch sem argumento
+    let act_empty = app.execute_slash_command("/branch");
+    assert!(act_empty.is_none());
+    assert!(app.viewport_lines.last().unwrap().contains("Uso correto"));
+
+    // Comando /branch com apenas espaços
+    let act_spaces = app.execute_slash_command("/branch    ");
+    assert!(act_spaces.is_none());
+    assert!(app.viewport_lines.last().unwrap().contains("Uso correto"));
+
+    // Autocomplete para prefixos de branch
+    assert_eq!(
+        pult_tui::app::autocomplete_slash_command("/b"),
+        Some("/branch")
+    );
+    assert_eq!(
+        pult_tui::app::autocomplete_slash_command("/br"),
+        Some("/branch")
+    );
+    assert_eq!(
+        pult_tui::app::autocomplete_slash_command("/branch"),
+        Some("/branch")
+    );
+}
+
+#[test]
+fn test_mutation_all_nine_phase_directives_distinct_content() {
+    let mut seen_directives = std::collections::HashSet::new();
+    for n in 1..=9 {
+        let phase = GostPhase::from_u8(n).expect("valid phase");
+        let directive = phase.agent_directive("work-branch");
+        assert!(!directive.trim().is_empty());
+        assert!(seen_directives.insert(directive), "Diretiva da fase {} não deve ser duplicada", n);
+    }
+}
+
