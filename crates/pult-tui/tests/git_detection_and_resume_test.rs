@@ -58,3 +58,30 @@ fn test_resume_session_restores_history_and_gost_state() {
     assert!(vp_text.contains("> Implementar limitador de requisições."));
     assert!(vp_text.contains("Plano formulado e contrato definido."));
 }
+
+#[test]
+fn test_mutation_git_detection_and_resume_edge_cases() {
+    let mut app = App::new();
+
+    // Mutante 1: Carregar arquivo inexistente
+    let missing_path = std::path::Path::new("/tmp/arquivo_sessao_inexistente_12345.md");
+    assert!(app.load_session_file(missing_path).is_err());
+
+    // Mutante 2: Carregar arquivo com sintaxe corrompida
+    let tmp = tempdir().expect("tempdir");
+    let corrupt_file = tmp.path().join("corrupt.md");
+    std::fs::write(&corrupt_file, "conteudo invalido sem frontmatter").expect("write corrupt");
+    assert!(app.load_session_file(&corrupt_file).is_err());
+
+    // Mutante 3: Branch com múltiplos níveis e caracteres especiais
+    assert_eq!(
+        infer_ticket_from_branch("lumen/feat/88-deep-branch-test"),
+        Some(88)
+    );
+    assert_eq!(
+        infer_ticket_from_branch("user/fix/7-quick_fix_suite"),
+        Some(7)
+    );
+    assert_eq!(infer_ticket_from_branch("   feat/55-spaces-trimmed   "), Some(55));
+    assert_eq!(infer_ticket_from_branch("prefix-without-slash"), None);
+}
