@@ -168,7 +168,8 @@ async fn test_scout_generate_session_slug_format_and_length_limit() {
 
     // Deve conter apenas minúsculas, números e hífens
     assert!(
-        slug.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
+        slug.chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
         "slug contém caracteres inválidos: {}",
         slug
     );
