@@ -474,10 +474,14 @@ impl App {
                         "★ [GOST Esteira Autônoma] Iniciando Fases 6 (Refactor), 7 (Mutation Test) e 8 (Quality Gate)...",
                     );
                     self.gost_phase = GostPhase::Refactor;
-                    self.append_viewport_line("  ✓ [Fase 6 - Refactor]: Limpeza e formatação verificadas.");
+                    self.append_viewport_line(
+                        "  ✓ [Fase 6 - Refactor]: Limpeza e formatação verificadas.",
+                    );
 
                     self.gost_phase = GostPhase::MutationTest;
-                    self.append_viewport_line("  ✓ [Fase 7 - Mutation Test]: Mutantes e robustez de testes verificados.");
+                    self.append_viewport_line(
+                        "  ✓ [Fase 7 - Mutation Test]: Mutantes e robustez de testes verificados.",
+                    );
 
                     self.gost_phase = GostPhase::QualityGate;
                     let audit_info = driver.check_strict().map_err(|e| e.to_string())?;

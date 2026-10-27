@@ -85,7 +85,10 @@ impl RepoDriver for MockDispatchDriver {
         _body: Option<&str>,
     ) -> Result<String, DriverError> {
         let msg = self.format_commit_message(phase, ticket_id, scope, subject, _body)?;
-        self.committed_phases.lock().unwrap().push((phase, msg.clone()));
+        self.committed_phases
+            .lock()
+            .unwrap()
+            .push((phase, msg.clone()));
         Ok(msg)
     }
 
@@ -101,7 +104,8 @@ impl RepoDriver for MockDispatchDriver {
 
 #[test]
 fn test_phase_prompt_synthesis() {
-    let prompt_p3 = App::phase_prompt_for(GostPhase::SpecContract, Some(26), "feat/26-auto-dispatch");
+    let prompt_p3 =
+        App::phase_prompt_for(GostPhase::SpecContract, Some(26), "feat/26-auto-dispatch");
     assert!(prompt_p3.contains("[DIRETIVA DE OPERAÇÃO - SUBAGENTE DE EXECUÇÃO PULT]"));
     assert!(prompt_p3.contains("#26"));
     assert!(prompt_p3.contains("docs/specs/"));
@@ -138,7 +142,10 @@ fn test_approve_phase1_dispatches_phase3_prompt() {
     assert_eq!(app.phase(), GostPhase::SpecContract);
 
     let pending = app.take_pending_dispatch();
-    assert!(pending.is_some(), "Deveria haver prompt gerado para despacho na Fase 3");
+    assert!(
+        pending.is_some(),
+        "Deveria haver prompt gerado para despacho na Fase 3"
+    );
     let p = pending.unwrap();
     assert!(p.contains("#26"));
     assert!(p.contains("docs/specs/"));
@@ -166,7 +173,10 @@ fn test_approve_phase3_dispatches_phase4_prompt() {
     assert_eq!(app.phase(), GostPhase::RedTest);
 
     let pending = app.take_pending_dispatch();
-    assert!(pending.is_some(), "Deveria haver prompt gerado para despacho na Fase 4");
+    assert!(
+        pending.is_some(),
+        "Deveria haver prompt gerado para despacho na Fase 4"
+    );
     let p = pending.unwrap();
     assert!(p.contains("#26"));
     assert!(p.contains("tests/"));
@@ -198,7 +208,10 @@ fn test_approve_phase4_dispatches_phase5_prompt() {
     assert_eq!(app.phase(), GostPhase::GreenCode);
 
     let pending = app.take_pending_dispatch();
-    assert!(pending.is_some(), "Deveria haver prompt gerado para despacho na Fase 5");
+    assert!(
+        pending.is_some(),
+        "Deveria haver prompt gerado para despacho na Fase 5"
+    );
     let p = pending.unwrap();
     assert!(p.contains("#26"));
     assert!(p.contains("src/"));
@@ -230,7 +243,10 @@ fn test_approve_phase5_chains_autonomously_to_phase9() {
     assert_eq!(app.phase(), GostPhase::CloseTicket);
 
     let pending = app.take_pending_dispatch();
-    assert!(pending.is_none(), "Fase 9 não despacha para agy, aguarda usuária");
+    assert!(
+        pending.is_none(),
+        "Fase 9 não despacha para agy, aguarda usuária"
+    );
 
     let commits = committed.lock().unwrap();
     assert_eq!(commits.len(), 1);
@@ -255,7 +271,10 @@ fn test_approve_phase5_stops_at_phase8_if_quality_gate_fails() {
     app.set_gost_phase(GostPhase::GreenCode);
 
     let res = app.execute_action(TuiAction::SpecApproved, &driver);
-    assert!(res.is_err(), "Deveria falhar devido ao bloqueio de qualidade na Fase 8");
+    assert!(
+        res.is_err(),
+        "Deveria falhar devido ao bloqueio de qualidade na Fase 8"
+    );
     assert_eq!(app.phase(), GostPhase::QualityGate);
 
     let pending = app.take_pending_dispatch();
