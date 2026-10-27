@@ -43,7 +43,6 @@ fn test_render_with_busy_state_does_not_panic() {
     terminal.draw(|f| render(&app, f)).unwrap();
 }
 
-
 #[test]
 fn test_mutation_spinner_full_cycle_integrity() {
     let mut app = App::new();
