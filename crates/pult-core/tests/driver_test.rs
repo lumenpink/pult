@@ -24,13 +24,13 @@ fn test_format_commit_message_by_phase() {
             None,
         )
         .expect("fase 3 formata");
-    assert!(msg3.starts_with("docs(auth): especifica trait (ref #42)"));
+    assert!(msg3.starts_with("docs(auth): especifica trait (ref #42 - ph3)"));
 
     // Fase 4 (RedTest)
     let msg4 = driver
         .format_commit_message(GostPhase::RedTest, 42, Some("auth"), "teste falho", None)
         .expect("fase 4 formata");
-    assert!(msg4.starts_with("test(auth): teste falho (ref #42)"));
+    assert!(msg4.starts_with("test(auth): teste falho (ref #42 - ph4)"));
 
     // Fase 5 (GreenCode)
     let msg5 = driver
@@ -42,7 +42,7 @@ fn test_format_commit_message_by_phase() {
             None,
         )
         .expect("fase 5 formata");
-    assert!(msg5.starts_with("feat(auth): implementa token (ref #42)"));
+    assert!(msg5.starts_with("feat(auth): implementa token (ref #42 - ph5)"));
 
     // Fase 6 (Refactor)
     let msg6 = driver
@@ -54,7 +54,7 @@ fn test_format_commit_message_by_phase() {
             None,
         )
         .expect("fase 6 formata");
-    assert!(msg6.starts_with("refactor(auth): otimiza bucket (ref #42)"));
+    assert!(msg6.starts_with("refactor(auth): otimiza bucket (ref #42 - ph6)"));
 
     // Fase 7 (MutationTest)
     let msg7 = driver
@@ -66,7 +66,7 @@ fn test_format_commit_message_by_phase() {
             None,
         )
         .expect("fase 7 formata");
-    assert!(msg7.starts_with("test(auth): elimina mutantes (ref #42)"));
+    assert!(msg7.starts_with("test(auth): elimina mutantes (ref #42 - ph7)"));
 
     // Fase 8 (QualityGate)
     let msg8 = driver
@@ -78,7 +78,7 @@ fn test_format_commit_message_by_phase() {
             None,
         )
         .expect("fase 8 formata");
-    assert!(msg8.starts_with("fix(auth): formata lint (ref #42)"));
+    assert!(msg8.starts_with("fix(auth): formata lint (ref #42 - ph8)"));
 
     // Fase 9 (CloseTicket)
     let msg9 = driver
@@ -90,7 +90,7 @@ fn test_format_commit_message_by_phase() {
             None,
         )
         .expect("fase 9 formata");
-    assert!(msg9.starts_with("docs(auth): finaliza modulo (closes #42)"));
+    assert!(msg9.starts_with("docs(auth): finaliza modulo (closes #42 - ph9)"));
 }
 
 #[test]
