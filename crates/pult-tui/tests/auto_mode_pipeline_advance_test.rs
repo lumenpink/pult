@@ -160,7 +160,10 @@ fn test_auto_pipeline_chain_from_phase3_to_phase9() {
     assert!(res.is_ok());
     assert_eq!(app.gost_phase, GostPhase::RedTest);
     let prompt_ph4 = app.take_pending_dispatch();
-    assert!(prompt_ph4.is_some(), "Deve gerar prompt automático para Fase 4");
+    assert!(
+        prompt_ph4.is_some(),
+        "Deve gerar prompt automático para Fase 4"
+    );
 
     // --- Passo 2: Conclusão da Fase 4 (RedTest) ---
     assert_eq!(app.gost_phase, GostPhase::RedTest);
@@ -170,7 +173,10 @@ fn test_auto_pipeline_chain_from_phase3_to_phase9() {
     assert!(res.is_ok());
     assert_eq!(app.gost_phase, GostPhase::GreenCode);
     let prompt_ph5 = app.take_pending_dispatch();
-    assert!(prompt_ph5.is_some(), "Deve gerar prompt automático para Fase 5");
+    assert!(
+        prompt_ph5.is_some(),
+        "Deve gerar prompt automático para Fase 5"
+    );
 
     // --- Passo 3: Conclusão da Fase 5 (GreenCode) ---
     assert_eq!(app.gost_phase, GostPhase::GreenCode);
@@ -181,7 +187,10 @@ fn test_auto_pipeline_chain_from_phase3_to_phase9() {
 
     // Deve ter encadeado automaticamente através de 6, 7 e 8 até a Fase 9 (CloseTicket)
     assert_eq!(app.gost_phase, GostPhase::CloseTicket);
-    assert!(app.take_pending_dispatch().is_none(), "Fase 9 não possui auto-prompt");
+    assert!(
+        app.take_pending_dispatch().is_none(),
+        "Fase 9 não possui auto-prompt"
+    );
 
     // --- Parada 2: Fase 9 (CloseTicket) PAUSA obrigatoriamente ---
     assert!(
