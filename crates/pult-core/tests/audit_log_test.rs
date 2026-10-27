@@ -48,3 +48,25 @@ fn test_audit_logger_appends_across_multiple_instances() {
     assert!(content.contains("[SESSION_START] Sessão 001"));
     assert!(content.contains("[SESSION_START] Sessão 002"));
 }
+
+#[test]
+fn test_mutation_audit_logger_deep_path_and_ordering() {
+    let tmp = tempdir().expect("tempdir");
+    let deep_path = tmp
+        .path()
+        .join("nivel1/nivel2/nivel3/nested_logs/audit.log");
+
+    let logger = AuditLogger::new(&deep_path).expect("criar em nivel profundo");
+    assert_eq!(logger.path(), deep_path.as_path());
+
+    for i in 1..=5 {
+        logger.log("ORDEM", &format!("Mensagem {}", i));
+    }
+
+    let content = std::fs::read_to_string(&deep_path).expect("ler log");
+    let lines: Vec<&str> = content.lines().collect();
+    assert_eq!(lines.len(), 5);
+    for (idx, line) in lines.iter().enumerate() {
+        assert!(line.contains(&format!("Mensagem {}", idx + 1)));
+    }
+}
