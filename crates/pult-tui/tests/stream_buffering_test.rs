@@ -41,3 +41,27 @@ fn test_closing_chronicle_uses_anarchist_vocabulary() {
         chronicle
     );
 }
+
+
+#[test]
+fn test_mutation_stream_chunk_empty_and_consecutive_newlines() {
+    let mut app = App::new();
+
+    // Chunk vazio não altera nada
+    app.append_stream_chunk("");
+    assert_eq!(app.viewport_lines.len(), 0);
+
+    // Consecutivos newlines
+    app.append_stream_chunk("Linha 1\n\nLinha 3\n");
+    assert_eq!(app.viewport_lines.len(), 3);
+    assert_eq!(app.viewport_lines[0], "Linha 1");
+    assert_eq!(app.viewport_lines[1], "");
+    assert_eq!(app.viewport_lines[2], "Linha 3");
+    assert!(!app.is_line_open);
+
+    // Acumulação posterior começa em nova linha
+    app.append_stream_chunk("Nova linha");
+    assert_eq!(app.viewport_lines.len(), 4);
+    assert_eq!(app.viewport_lines[3], "Nova linha");
+    assert!(app.is_line_open);
+}
