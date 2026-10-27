@@ -379,13 +379,13 @@ fn parse_turn_header(
             status = TurnStatus::parse(val);
         } else if let Some(val) = part.strip_prefix("ELAPSED:") {
             let val = val.trim();
-            if let Some(s_val) = val.strip_suffix('s') {
-                if let Ok(secs) = s_val.parse::<f64>() {
-                    elapsed_ms = Some((secs * 1000.0).round() as u64);
-                }
-            } else if let Some(ms_val) = val.strip_suffix("ms") {
+            if let Some(ms_val) = val.strip_suffix("ms") {
                 if let Ok(ms) = ms_val.parse::<u64>() {
                     elapsed_ms = Some(ms);
+                }
+            } else if let Some(s_val) = val.strip_suffix('s') {
+                if let Ok(secs) = s_val.parse::<f64>() {
+                    elapsed_ms = Some((secs * 1000.0).round() as u64);
                 }
             }
         } else if let Ok(n) = part.trim().parse::<usize>() {

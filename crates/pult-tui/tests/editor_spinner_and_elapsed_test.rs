@@ -52,3 +52,15 @@ fn test_header_always_shows_gost_phase_without_spinner() {
         content
     );
 }
+
+#[test]
+fn test_mutation_busy_elapsed_minutes_format() {
+    let mut app = App::new();
+    let now = std::time::Instant::now();
+    // Simula 85 segundos no passado
+    if let Some(past) = now.checked_sub(std::time::Duration::from_secs(85)) {
+        app.busy_start_time = Some(past);
+        let formatted = app.busy_elapsed_formatted();
+        assert_eq!(formatted, "(1m 25s)");
+    }
+}
