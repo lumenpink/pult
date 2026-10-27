@@ -81,3 +81,41 @@ fn test_multiturn_continuous_persistence_and_streaming() {
     assert_eq!(final_session.turns[3].turn_number, 4);
     assert_eq!(final_session.turns[3].actor, Actor::Agy);
 }
+
+#[test]
+fn test_mutation_empty_session_operations_and_abrupt_interruption() {
+    let tmp = tempdir().expect("tempdir");
+    let storage = FileSessionStorage::new(tmp.path());
+
+    let mut session = Session::new_draft("resiliencia-mutante");
+
+    // Operações em sessão sem turnos não devem entrar em pânico
+    session.append_to_last_turn("chunk órfão");
+    session.update_last_turn_status(TurnStatus::Truncated);
+    assert_eq!(session.turns.len(), 0);
+
+    // Turno da usuária
+    session.add_turn(
+        Actor::User,
+        "Inicie a refatoração.".to_string(),
+        TurnStatus::Completed,
+    );
+
+    // Agente inicia stream
+    session.add_turn(Actor::Agy, String::new(), TurnStatus::InProgress);
+    session.append_to_last_turn("Refatorando módulo A... ");
+    session.append_to_last_turn("adicionando tratamento de erros.");
+    storage.save(&session).expect("salvar estado interrompido");
+
+    // Simula interrupção abrupta (processo morre aqui antes de Completed)
+    let reloaded = storage
+        .load(&session.metadata.session_id)
+        .expect("recarregar sessão interrompida");
+
+    assert_eq!(reloaded.turns.len(), 2);
+    assert_eq!(reloaded.turns[1].status, TurnStatus::InProgress);
+    assert_eq!(
+        reloaded.turns[1].content,
+        "Refatorando módulo A... adicionando tratamento de erros."
+    );
+}
