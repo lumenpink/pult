@@ -93,3 +93,24 @@ fn test_mutation_cli_unrecognized_argument_fails() {
     let res = Cli::try_parse_from(["pult", "--invalid-unknown-option"]);
     assert!(res.is_err());
 }
+
+#[test]
+fn test_cli_log_flag_default_and_custom() {
+    let cli_default = Cli::try_parse_from(["pult", "--log"]).expect("parse --log");
+    assert_eq!(
+        cli_default.log.as_deref(),
+        Some(".antigravity/pult/logs/interacoes.log")
+    );
+
+    let cli_short = Cli::try_parse_from(["pult", "-l"]).expect("parse -l");
+    assert_eq!(
+        cli_short.log.as_deref(),
+        Some(".antigravity/pult/logs/interacoes.log")
+    );
+
+    let cli_custom = Cli::try_parse_from(["pult", "-l", "meu.log"]).expect("parse custom log");
+    assert_eq!(cli_custom.log.as_deref(), Some("meu.log"));
+
+    let cli_none = Cli::try_parse_from(["pult"]).expect("parse sem log");
+    assert_eq!(cli_none.log, None);
+}

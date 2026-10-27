@@ -105,7 +105,33 @@ async fn run_tui(cli: Cli, repo_dir: PathBuf) -> io::Result<()> {
         }
     }
 
-    let res = run_loop(&mut terminal, &mut app).await;
+    // 4. Suporte a log de auditoria (-l / --log)
+    let audit_logger = cli.log.as_ref().and_then(|log_arg| {
+        let log_path = if std::path::Path::new(log_arg).is_absolute() {
+            PathBuf::from(log_arg)
+        } else {
+            repo_dir.join(log_arg)
+        };
+        match pult_core::AuditLogger::new(&log_path) {
+            Ok(logger) => {
+                app.append_viewport_line(&format!(
+                    "ℹ Log de auditoria ativo em '{}'.",
+                    log_path.display()
+                ));
+                Some(std::sync::Arc::new(logger))
+            }
+            Err(e) => {
+                app.append_viewport_line(&format!(
+                    "⚠ Falha ao inicializar log de auditoria '{}': {}",
+                    log_path.display(),
+                    e
+                ));
+                None
+            }
+        }
+    });
+
+    let res = run_loop(&mut terminal, &mut app, audit_logger).await;
 
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
@@ -121,6 +147,7 @@ async fn run_tui(cli: Cli, repo_dir: PathBuf) -> io::Result<()> {
 async fn run_loop<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     app: &mut App,
+    audit_logger: Option<std::sync::Arc<pult_core::AuditLogger>>,
 ) -> io::Result<()> {
     let (pipeline_tx, mut pipeline_rx) = mpsc::channel::<PipelineEvent>(200);
 
@@ -179,6 +206,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
                                 let tid = app.ticket_id;
                                 let branch = app.branch_name.clone();
                                 let session_arc = app.session.clone();
+                                let audit = audit_logger.clone();
 
                                 tokio::spawn(async move {
                                     run_orchestration_pipeline(
@@ -187,6 +215,7 @@ async fn run_loop<B: ratatui::backend::Backend>(
                                         tid,
                                         branch,
                                         session_arc,
+                                        audit,
                                         tx,
                                     )
                                     .await;
@@ -219,8 +248,12 @@ async fn run_orchestration_pipeline(
     ticket_id: Option<u32>,
     branch_name: String,
     session_arc: std::sync::Arc<std::sync::Mutex<Option<pult_core::Session>>>,
+    audit: Option<std::sync::Arc<pult_core::AuditLogger>>,
     tx: mpsc::Sender<PipelineEvent>,
 ) {
+    if let Some(ref l) = audit {
+        l.log("USER_INPUT", &format!("Prompt recebido: {}", prompt));
+    }
     // 1. Extração Estrutural de AST Poliglota
     let _ = tx
         .send(PipelineEvent::StepBusy("Extraindo AST...".into()))
@@ -241,6 +274,12 @@ async fn run_orchestration_pipeline(
                         files.len()
                     )))
                     .await;
+                if let Some(ref l) = audit {
+                    l.log(
+                        "AST_EXTRACTION",
+                        &format!("{} arquivos analisados", files.len()),
+                    );
+                }
                 files
             }
             Err(e) => {
@@ -250,6 +289,9 @@ async fn run_orchestration_pipeline(
                         e
                     )))
                     .await;
+                if let Some(ref l) = audit {
+                    l.log("AST_EXTRACTION", &format!("Aviso na extração: {}", e));
+                }
                 Vec::new()
             }
         };
@@ -264,6 +306,13 @@ async fn run_orchestration_pipeline(
         ))
         .await;
 
+    if let Some(ref l) = audit {
+        l.log(
+            "SCOUT_REQUEST",
+            &format!("Prompt: {} | Arquivos AST: {}", prompt, ast_files.len()),
+        );
+    }
+
     let scout = pult_core::ScoutEngine::new();
     let scout_result = scout.filter_with_bypass(&prompt, &ast_files).await;
 
@@ -274,6 +323,9 @@ async fn run_orchestration_pipeline(
                 let _ = tx.send(PipelineEvent::Log(
                     "  ℹ [2/4] Scout em modo bypass (Ollama inacessível ou sem modelo local carregado).".into(),
                 )).await;
+                if let Some(ref l) = audit {
+                    l.log("SCOUT_RESPONSE", "Modo bypass ativo");
+                }
             } else {
                 let count = res.symbols.len();
                 let _ = tx
@@ -288,6 +340,17 @@ async fn run_orchestration_pipeline(
                         res.yaml_block
                     );
                 }
+                if let Some(ref l) = audit {
+                    l.log(
+                        "SCOUT_RESPONSE",
+                        &format!(
+                            "Modelo: {} | Símbolos: {:?} | YAML: {} bytes",
+                            res.model_used,
+                            res.symbols,
+                            res.yaml_block.len()
+                        ),
+                    );
+                }
             }
         }
         Err(e) => {
@@ -297,6 +360,9 @@ async fn run_orchestration_pipeline(
                     e
                 )))
                 .await;
+            if let Some(ref l) = audit {
+                l.log("SCOUT_RESPONSE", &format!("Erro no Scout: {}", e));
+            }
         }
     }
 
@@ -350,6 +416,13 @@ async fn run_orchestration_pipeline(
         )))
         .await;
 
+    if let Some(ref l) = audit {
+        l.log(
+            "SESSION_SAVE",
+            &format!("Turno #{} salvo na sessão {}", turn_number, session_id),
+        );
+    }
+
     // 4. Execução do Agente Externo (agy)
     let _ = tx
         .send(PipelineEvent::StepBusy("Agente (agy)...".into()))
@@ -375,6 +448,13 @@ async fn run_orchestration_pipeline(
 
     let full_prompt = format!("{}{}", prompt, injected_context);
 
+    if let Some(ref l) = audit {
+        l.log(
+            "AGY_DISPATCH",
+            &format!("Prompt enviado ao agy: {} bytes", full_prompt.len()),
+        );
+    }
+
     let runner = pult_core::AgyRunner::with_options(pult_core::RunnerOptions {
         command: "agy".to_string(),
         args: vec![
@@ -397,6 +477,9 @@ async fn run_orchestration_pipeline(
                                 let _ = storage.save(sess);
                             }
                         }
+                        if let Some(ref l) = audit {
+                            l.log("AGY_STREAM", &chunk);
+                        }
                         let _ = tx.send(PipelineEvent::Chunk(chunk)).await;
                     }
                     pult_core::AgyStreamEvent::StderrChunk(chunk) => {
@@ -407,6 +490,9 @@ async fn run_orchestration_pipeline(
                                 let _ = storage.save(sess);
                             }
                         }
+                        if let Some(ref l) = audit {
+                            l.log("AGY_STREAM_ERR", &chunk);
+                        }
                         let _ = tx.send(PipelineEvent::Chunk(chunk)).await;
                     }
                     pult_core::AgyStreamEvent::Truncated => {
@@ -416,6 +502,9 @@ async fn run_orchestration_pipeline(
                                 sess.update_last_turn_status(pult_core::TurnStatus::Truncated);
                                 let _ = storage.save(sess);
                             }
+                        }
+                        if let Some(ref l) = audit {
+                            l.log("AGY_RESULT", "Truncated");
                         }
                         let _ = tx
                             .send(PipelineEvent::Log(
@@ -431,6 +520,12 @@ async fn run_orchestration_pipeline(
                                 let _ = storage.save(sess);
                             }
                         }
+                        if let Some(ref l) = audit {
+                            l.log(
+                                "AGY_RESULT",
+                                &format!("Completed exit_code: {}", exit_code),
+                            );
+                        }
                         let _ = tx.send(PipelineEvent::Completed(exit_code)).await;
                         break;
                     }
@@ -441,6 +536,9 @@ async fn run_orchestration_pipeline(
                                 sess.update_last_turn_status(pult_core::TurnStatus::Interrupted);
                                 let _ = storage.save(sess);
                             }
+                        }
+                        if let Some(ref l) = audit {
+                            l.log("AGY_RESULT", &format!("Error: {}", err));
                         }
                         let _ = tx.send(PipelineEvent::Failed(err)).await;
                         break;
@@ -456,6 +554,9 @@ async fn run_orchestration_pipeline(
                     sess.update_last_turn_status(pult_core::TurnStatus::Interrupted);
                     let _ = storage.save(sess);
                 }
+            }
+            if let Some(ref l) = audit {
+                l.log("AGY_RESULT", &format!("Spawn error: {}", e));
             }
             let _ = tx
                 .send(PipelineEvent::Failed(format!(

@@ -28,6 +28,15 @@ pub struct Cli {
     /// Retomar sessão existente a partir de arquivo markdown
     #[arg(short = 's', long = "resume")]
     pub resume: Option<String>,
+
+    /// Gravar trilha completa de auditoria de interações em arquivo de log
+    #[arg(
+        short = 'l',
+        long = "log",
+        num_args = 0..=1,
+        default_missing_value = ".antigravity/pult/logs/interacoes.log"
+    )]
+    pub log: Option<String>,
 }
 
 impl Cli {

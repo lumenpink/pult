@@ -391,7 +391,7 @@ fn sanitize_slug(slug: &str) -> String {
     }
 }
 
-fn current_epoch_seconds() -> u64 {
+pub(crate) fn current_epoch_seconds() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -412,7 +412,7 @@ fn days_to_ymd(days: u64) -> (u32, u32, u32) {
     (y as u32, m as u32, d as u32)
 }
 
-fn epoch_to_iso(epoch_secs: u64) -> String {
+pub(crate) fn epoch_to_iso(epoch_secs: u64) -> String {
     let days = epoch_secs / 86400;
     let rem = epoch_secs % 86400;
     let hours = rem / 3600;

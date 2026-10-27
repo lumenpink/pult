@@ -2,6 +2,7 @@
 //! e guardião normativo do ciclo GOST DD-TDD para o PULT.
 
 pub mod ast;
+pub mod audit;
 pub mod domain;
 pub mod driver;
 pub mod repo;
@@ -12,6 +13,7 @@ pub use ast::{
     AstError, AstExtractor, ExtractedAstFile, PolyglotAstExtractor, RustAstExtractor,
     SupportedLanguage,
 };
+pub use audit::AuditLogger;
 pub use domain::{
     Actor, ContextFilter, FileSessionStorage, GostMetadata, GostPhase, Session, SessionError,
     SessionMetadata, SessionStorage, TicketRef, Turn, TurnStatus,
