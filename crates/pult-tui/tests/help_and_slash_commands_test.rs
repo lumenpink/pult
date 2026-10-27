@@ -94,3 +94,26 @@ fn test_minimalist_footer_only_shows_ctrl_h_help() {
     assert!(!rendered_text.contains("Ctrl+G: Finalizar"));
     assert!(!rendered_text.contains("Ctrl+M: Mesclar"));
 }
+
+#[test]
+fn test_mutation_slash_commands_and_autocomplete_edge_cases() {
+    let mut app = App::new();
+
+    // Mutante 1: Comando desconhecido com barra
+    let act_unknown = app.execute_slash_command("/desconhecido");
+    assert_eq!(act_unknown, None);
+    let vp_text = app.viewport_lines.join("\n");
+    assert!(vp_text.contains("Comando desconhecido: '/desconhecido'"));
+
+    // Mutante 2: Autocomplete com prefixos vazios ou ambíguos
+    assert_eq!(autocomplete_slash_command(""), None);
+    assert_eq!(autocomplete_slash_command("/"), None);
+    assert_eq!(autocomplete_slash_command("/xpto"), None);
+
+    // Mutante 3: /next quando já na Fase 9
+    app.set_gost_phase(pult_core::domain::GostPhase::CloseTicket);
+    let act_overflow = app.execute_slash_command("/next");
+    assert_eq!(act_overflow, None);
+    let vp_text_overflow = app.viewport_lines.join("\n");
+    assert!(vp_text_overflow.contains("Não há próxima fase disponível"));
+}
