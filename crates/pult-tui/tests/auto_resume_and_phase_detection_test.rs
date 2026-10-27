@@ -182,3 +182,54 @@ fn test_branch_changed_action_reconciles_session_and_phase() {
     assert_eq!(app.ticket_id(), Some(5));
     assert_eq!(app.phase(), GostPhase::GreenCode);
 }
+
+#[test]
+fn test_mutation_sessions_dir_nonexistent_returns_none() {
+    let tmp = tempdir().unwrap();
+    let repo_dir = tmp.path().to_path_buf(); // sem .antigravity/pult/sessions
+
+    let res = App::find_session_for_ticket(&repo_dir, 1, "feat/1-test");
+    assert!(res.is_none());
+}
+
+#[test]
+fn test_mutation_empty_sessions_dir_returns_none() {
+    let tmp = tempdir().unwrap();
+    let repo_dir = tmp.path().to_path_buf();
+    let sessions_dir = repo_dir.join(".antigravity/pult/sessions");
+    fs::create_dir_all(&sessions_dir).unwrap();
+
+    let res = App::find_session_for_ticket(&repo_dir, 1, "feat/1-test");
+    assert!(res.is_none());
+}
+
+#[test]
+fn test_mutation_main_branch_returns_ticket_phase() {
+    let tmp = tempdir().unwrap();
+    let driver = pult_core::CccpGitDriver::new(tmp.path());
+
+    let phase_main = driver.detect_branch_phase("main", None).unwrap();
+    assert_eq!(phase_main, GostPhase::Ticket);
+
+    let phase_master = driver.detect_branch_phase("master", None).unwrap();
+    assert_eq!(phase_master, GostPhase::Ticket);
+}
+
+#[test]
+fn test_mutation_auto_sync_branch_state_idempotent() {
+    let tmp = tempdir().unwrap();
+    let repo_dir = tmp.path().to_path_buf();
+    let mut app = App::with_repo(repo_dir);
+    let driver = MockPhaseDetectionDriver {
+        current_branch_name: "feat/10-idempotent".to_string(),
+        detected_phase: GostPhase::SpecContract,
+    };
+
+    app.auto_sync_branch_state("feat/10-idempotent", &driver);
+    assert_eq!(app.ticket_id(), Some(10));
+    assert_eq!(app.phase(), GostPhase::SpecContract);
+
+    app.auto_sync_branch_state("feat/10-idempotent", &driver);
+    assert_eq!(app.ticket_id(), Some(10));
+    assert_eq!(app.phase(), GostPhase::SpecContract);
+}
