@@ -31,17 +31,34 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
     };
 
     let title_span = Span::styled(
-        format!(" ☭ PULT v{} ", pult_core::VERSION),
+        format!(" ☭ PULT v{} ", pult_core::short_version()),
         Style::default()
             .fg(Color::Yellow)
             .add_modifier(Modifier::BOLD),
     );
-    let phase_span = Span::styled(
-        format!(" FASE {} ", app.gost_phase.number()),
-        Style::default()
-            .fg(Color::Cyan)
-            .add_modifier(Modifier::BOLD),
-    );
+    let phase_or_busy_span = if app.is_busy {
+        Span::styled(
+            format!(
+                " {} {} ",
+                app.spinner_glyph(),
+                if app.busy_label.is_empty() {
+                    "PROCESSANDO"
+                } else {
+                    &app.busy_label
+                }
+            ),
+            Style::default()
+                .fg(Color::LightYellow)
+                .add_modifier(Modifier::BOLD),
+        )
+    } else {
+        Span::styled(
+            format!(" FASE {} ", app.gost_phase.number()),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
+    };
     let repo_span = Span::styled(
         format!(" [{}] ", app.repo_name),
         Style::default()
@@ -56,7 +73,7 @@ fn render_header(app: &App, frame: &mut Frame, area: Rect) {
     let header_line = Line::from(vec![
         title_span,
         Span::raw(" | "),
-        phase_span,
+        phase_or_busy_span,
         Span::raw(" | "),
         repo_span,
         Span::raw(" | "),
@@ -109,10 +126,24 @@ fn render_editor(app: &App, frame: &mut Frame, area: Rect) {
         Style::default().fg(Color::DarkGray)
     };
 
+    let title = if app.is_busy {
+        format!(
+            " [Editor ({} {})] ",
+            app.spinner_glyph(),
+            if app.busy_label.is_empty() {
+                "Processando..."
+            } else {
+                &app.busy_label
+            }
+        )
+    } else {
+        " [Editor Multilinha] ".to_string()
+    };
+
     let mut textarea = app.textarea.clone();
     textarea.set_block(
         Block::default()
-            .title(" [Editor Multilinha] ")
+            .title(title)
             .borders(Borders::ALL)
             .border_style(border_style),
     );

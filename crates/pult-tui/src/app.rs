@@ -21,6 +21,9 @@ pub struct App {
     pub gost_phase: GostPhase,
     pub repo_path: std::path::PathBuf,
     pub repo_name: String,
+    pub is_busy: bool,
+    pub spinner_idx: usize,
+    pub busy_label: String,
 }
 
 impl Default for App {
@@ -54,6 +57,9 @@ impl App {
             gost_phase: GostPhase::Ticket,
             repo_path,
             repo_name,
+            is_busy: false,
+            spinner_idx: 0,
+            busy_label: String::new(),
         }
     }
 
@@ -171,7 +177,24 @@ impl App {
         }
     }
 
+    pub fn spinner_glyph(&self) -> &'static str {
+        const GLYPHS: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+        GLYPHS[self.spinner_idx % GLYPHS.len()]
+    }
+
+    pub fn tick_spinner(&mut self) {
+        self.spinner_idx = (self.spinner_idx + 1) % 10;
+    }
+
+    pub fn set_busy(&mut self, busy: bool, label: &str) {
+        self.is_busy = busy;
+        self.busy_label = label.to_string();
+    }
+
     pub fn submit_input(&mut self) -> Option<String> {
+        if self.is_busy {
+            return None;
+        }
         let lines = self.textarea.lines();
         let content = lines.join("\n").trim().to_string();
         if content.is_empty() {

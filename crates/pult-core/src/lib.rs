@@ -27,6 +27,22 @@ pub use scout::{
 };
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const ROOT_VERSION: &str = include_str!("../../../VERSION");
+
+pub static SHORT_VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+    let trimmed = ROOT_VERSION.trim();
+    trimmed.split('+').next().unwrap_or(trimmed).to_string()
+});
+
+/// Retorna a versão canônica completa SemVer gerenciada pelo repositório.
+pub fn canonical_version() -> &'static str {
+    ROOT_VERSION.trim()
+}
+
+/// Retorna a versão curta cortada no caractere '+' (ex.: '0.1.0-dev.87').
+pub fn short_version() -> &'static str {
+    &SHORT_VERSION
+}
 
 #[cfg(test)]
 mod tests {

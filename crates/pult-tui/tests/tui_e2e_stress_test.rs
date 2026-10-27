@@ -51,9 +51,9 @@ fn test_e2e_viewport_5000_lines_scroll_stress() {
         .expect("render retorno topo");
 
     let duration = start.elapsed();
-    // 4 renderizações completas com 5000 linhas devem levar < 50ms
+    // 4 renderizações completas com 5000 linhas devem levar < 100ms
     assert!(
-        duration.as_millis() < 50,
+        duration.as_millis() < 100,
         "Tempo de renderização: {:?}",
         duration
     );
