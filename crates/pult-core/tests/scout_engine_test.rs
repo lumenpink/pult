@@ -147,3 +147,45 @@ fn test_mutation_engine_custom_model_and_url_normalization() {
     let engine = ScoutEngine::with_client(client).with_model("llama3.2:1b");
     assert_eq!(engine.model_name(), "llama3.2:1b");
 }
+
+#[tokio::test]
+async fn test_scout_generate_session_slug_format_and_length_limit() {
+    let engine = ScoutEngine::new();
+
+    // Frase longa com caracteres especiais e acentos
+    let input = "Implementar o Limitador de Taxas em Memória com Token Bucket & Redis! [Fase 3]";
+    let slug = engine.generate_session_slug(input).await;
+
+    // Deve ser <= 60 caracteres
+    assert!(
+        slug.len() <= 60,
+        "slug deve ter no máximo 60 chars, teve {}",
+        slug.len()
+    );
+
+    // Deve ser não-vazio
+    assert!(!slug.is_empty());
+
+    // Deve conter apenas minúsculas, números e hífens
+    assert!(
+        slug.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
+        "slug contém caracteres inválidos: {}",
+        slug
+    );
+
+    // Não deve começar nem terminar com hífen
+    assert!(!slug.starts_with('-'));
+    assert!(!slug.ends_with('-'));
+    assert!(!slug.contains("--"));
+
+    // Entrada extremamente longa (> 200 chars)
+    let long_input = "Um prompt extremamente longo que detalha exaustivamente cada nuance arquitetural e os requisitos não-funcionais que precisam ser cobertos durante a execução da esteira DD-TDD do GOST";
+    let long_slug = engine.generate_session_slug(long_input).await;
+    assert!(long_slug.len() <= 60);
+    assert!(!long_slug.starts_with('-'));
+    assert!(!long_slug.ends_with('-'));
+
+    // Entrada vazia ou somente caracteres especiais
+    let empty_slug = engine.generate_session_slug("!@#$%^&*()").await;
+    assert_eq!(empty_slug, "sessao-trabalho");
+}
