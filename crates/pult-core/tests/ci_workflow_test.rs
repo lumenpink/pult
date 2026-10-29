@@ -80,3 +80,25 @@ fn test_mutation_ci_workflow_branches_and_secrets() {
     assert!(content.contains("secrets.CLOUDFLARE_ACCOUNT_ID"));
     assert!(content.contains("npx wrangler deploy"));
 }
+
+#[test]
+fn test_no_openssl_sys_dependency_in_pult_core() {
+    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap();
+
+    let output = std::process::Command::new("cargo")
+        .current_dir(workspace_root)
+        .args(["tree", "-i", "openssl-sys", "-p", "pult-core"])
+        .output()
+        .expect("cargo tree deve executar");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.trim().is_empty(),
+        "pult-core não deve depender de openssl-sys (deve usar rustls-tls): {}",
+        stdout
+    );
+}
