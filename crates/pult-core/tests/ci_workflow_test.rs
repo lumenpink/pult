@@ -101,4 +101,17 @@ fn test_no_openssl_sys_dependency_in_pult_core() {
         "pult-core não deve depender de openssl-sys (deve usar rustls-tls): {}",
         stdout
     );
+
+    let output_native_tls = std::process::Command::new("cargo")
+        .current_dir(workspace_root)
+        .args(["tree", "-i", "native-tls", "-p", "pult-core"])
+        .output()
+        .expect("cargo tree deve executar");
+
+    let stdout_native_tls = String::from_utf8_lossy(&output_native_tls.stdout);
+    assert!(
+        stdout_native_tls.trim().is_empty(),
+        "pult-core não deve depender de native-tls: {}",
+        stdout_native_tls
+    );
 }
