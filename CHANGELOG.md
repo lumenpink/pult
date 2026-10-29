@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `crates/pult-core`: Migração de `reqwest` para `rustls-tls` sem `default-features`, eliminando `openssl-sys` e viabilizando compilação cruzada estática MUSL para publicação na Banca (closes #34).
 - `crates/pult-core`: Desacoplamento da função pura `parse_quality_audit` para auditoria estrita do Gosplan e tolerância à ausência do binário cccp em testes de integração (closes #33).
 
 ### Added
