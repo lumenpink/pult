@@ -182,42 +182,7 @@ impl RepoDriver for CccpGitDriver {
             .output()?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-
-        let mut total_checks = 0;
-        let mut conforming = 0;
-        let mut warnings = 0;
-        let mut failures = 0;
-        let mut compliance_index = "0%".to_string();
-
-        for line in stdout.lines() {
-            if line.contains("Total de verificações:") {
-                for part in line.split('|') {
-                    let part = part.trim();
-                    if let Some(val) = part.strip_prefix("Total de verificações:") {
-                        total_checks = val.trim().parse().unwrap_or(0);
-                    } else if let Some(val) = part.strip_prefix("Conformes:") {
-                        conforming = val.trim().parse().unwrap_or(0);
-                    } else if let Some(val) = part.strip_prefix("Avisos:") {
-                        warnings = val.trim().parse().unwrap_or(0);
-                    } else if let Some(val) = part.strip_prefix("Falhas:") {
-                        failures = val.trim().parse().unwrap_or(0);
-                    }
-                }
-            } else if let Some(val) = line.strip_prefix("Índice de Conformidade Gosplan:") {
-                compliance_index = val.trim().to_string();
-            }
-        }
-
-        let passed = output.status.success() && failures == 0;
-
-        Ok(QualityAudit {
-            passed,
-            total_checks,
-            conforming,
-            warnings,
-            failures,
-            compliance_index,
-        })
+        Ok(parse_quality_audit(&stdout, output.status.success()))
     }
 
     fn format_commit_message(
@@ -465,5 +430,44 @@ pub fn parse_ticket_creation_output(output: &str) -> Option<(u32, String)> {
         (Some(id), Some(b)) => Some((id, b)),
         (Some(id), None) => Some((id, format!("feat/{}-ticket", id))),
         _ => None,
+    }
+}
+
+/// Interpreta a saída da auditoria de conformidade estrita do Gosplan (`cccp check --strict`).
+pub fn parse_quality_audit(stdout: &str, status_success: bool) -> QualityAudit {
+    let mut total_checks = 0;
+    let mut conforming = 0;
+    let mut warnings = 0;
+    let mut failures = 0;
+    let mut compliance_index = "0%".to_string();
+
+    for line in stdout.lines() {
+        if line.contains("Total de verificações:") {
+            for part in line.split('|') {
+                let part = part.trim();
+                if let Some(val) = part.strip_prefix("Total de verificações:") {
+                    total_checks = val.trim().parse().unwrap_or(0);
+                } else if let Some(val) = part.strip_prefix("Conformes:") {
+                    conforming = val.trim().parse().unwrap_or(0);
+                } else if let Some(val) = part.strip_prefix("Avisos:") {
+                    warnings = val.trim().parse().unwrap_or(0);
+                } else if let Some(val) = part.strip_prefix("Falhas:") {
+                    failures = val.trim().parse().unwrap_or(0);
+                }
+            }
+        } else if let Some(val) = line.strip_prefix("Índice de Conformidade Gosplan:") {
+            compliance_index = val.trim().to_string();
+        }
+    }
+
+    let passed = status_success && failures == 0;
+
+    QualityAudit {
+        passed,
+        total_checks,
+        conforming,
+        warnings,
+        failures,
+        compliance_index,
     }
 }

@@ -18,7 +18,10 @@ pub use domain::{
     Actor, ContextFilter, FileSessionStorage, GostMetadata, GostPhase, Session, SessionError,
     SessionMetadata, SessionStorage, TicketRef, Turn, TurnStatus,
 };
-pub use driver::{CccpGitDriver, DriverError, GitStatus, QualityAudit, RepoDriver, TicketDetails};
+pub use driver::{
+    parse_quality_audit, CccpGitDriver, DriverError, GitStatus, QualityAudit, RepoDriver,
+    TicketDetails,
+};
 pub use repo::{resolve_repo_path, resolve_repo_path_with_env, RepoError};
 pub use runner::{
     AgyRunner, AgyStreamEvent, ResumeInspection, RunnerError, RunnerOptions, RunnerStream,
