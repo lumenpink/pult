@@ -78,9 +78,10 @@ jobs:
 
       - name: "Compile Pult Multiarch Binaries"
         run: |
-          echo "★ [1/3] Compilando x86_64-unknown-linux-musl (Linux AMD64)..."
-          cargo zigbuild --release --target x86_64-unknown-linux-musl -p pult-tui || \
-            cargo build --release --target x86_64-unknown-linux-musl -p pult-tui
+          echo "★ [1/3] Compilando x86_64-unknown-linux-musl (Linux AMD64 estático)..."
+          unset CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER
+          cargo build --release --target x86_64-unknown-linux-musl -p pult-tui || \
+            cargo zigbuild --release --target x86_64-unknown-linux-musl -p pult-tui
 
           echo "★ [2/3] Compilando aarch64-unknown-linux-musl (Linux ARM64)..."
           cargo zigbuild --release --target aarch64-unknown-linux-musl -p pult-tui || \
@@ -161,7 +162,7 @@ jobs:
           CHANNEL="${{ steps.meta.outputs.channel }}"
           VERSION="${{ steps.meta.outputs.version }}"
 
-          echo "★ Clonando repositório soberano da Banca para rotação e retenção..."
+          echo "★ Clonando repositório da Banca para rotação e retenção..."
           git clone --depth 1 "https://lumen:${GIT_2LP_TOKEN}@gambi.2lp.in/lumen/banca.git" /tmp/banca
 
           if [ -d "/tmp/banca/site/downloads/pult" ] && [ -f "/tmp/banca/scripts/rotate-downloads.py" ]; then
