@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `crates/pult-core`: Desacoplamento da função pura `parse_quality_audit` para auditoria estrita do Gosplan e tolerância à ausência do binário cccp em testes de integração (closes #33).
+
 ### Added
 - `crates/pult-tui` & `crates/pult-core`: Inspeção de arquivos alterados e minuta na Fase 9, e janela modal de diff colorido scrollável via `/diff` e atalho `Ctrl+D` (closes #32).
 - `crates/pult-tui`: Orquestração contínua autônoma de esteira no modo auto com aprovação e despacho encadeado das fases 3 a 8, e paradas mandatórias na Fase 1 (aprovação de escopo) e Fase 9 (homologação final) (closes #31).

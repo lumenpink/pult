@@ -163,7 +163,10 @@ fn test_mutation_check_strict_execution() {
             // Se cccp não estiver presente no PATH (ex.: ambiente minimalista de CI),
             // a ausência é tolerada sem quebrar o build.
         }
-        Err(other) => panic!("esperava sucesso ou cccp ausente (NotFound), obteve {:?}", other),
+        Err(other) => panic!(
+            "esperava sucesso ou cccp ausente (NotFound), obteve {:?}",
+            other
+        ),
     }
 }
 
