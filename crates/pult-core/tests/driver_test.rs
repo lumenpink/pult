@@ -203,3 +203,34 @@ Auditoria estrita falhou!
     assert_eq!(audit.failures, 2);
     assert_eq!(audit.compliance_index, "93%");
 }
+
+#[test]
+fn test_mutation_parse_quality_audit_edge_cases() {
+    // Caso 1: Saída vazia com sucesso de processo
+    let empty_audit = parse_quality_audit("", true);
+    assert!(empty_audit.passed);
+    assert_eq!(empty_audit.total_checks, 0);
+    assert_eq!(empty_audit.conforming, 0);
+    assert_eq!(empty_audit.warnings, 0);
+    assert_eq!(empty_audit.failures, 0);
+    assert_eq!(empty_audit.compliance_index, "0%");
+
+    // Caso 2: Processo exit status 0 (sucesso), mas com falhas contabilizadas -> passed deve ser false
+    let stdout_with_failures = "Total de verificações: 10 | Conformes: 9 | Avisos: 0 | Falhas: 1\nÍndice de Conformidade Gosplan: 90%";
+    let audit_fail = parse_quality_audit(stdout_with_failures, true);
+    assert!(!audit_fail.passed);
+    assert_eq!(audit_fail.failures, 1);
+
+    // Caso 3: Processo exit status non-zero, mas 0 falhas -> passed deve ser false
+    let stdout_zero_failures = "Total de verificações: 10 | Conformes: 10 | Avisos: 0 | Falhas: 0\nÍndice de Conformidade Gosplan: 100%";
+    let audit_proc_fail = parse_quality_audit(stdout_zero_failures, false);
+    assert!(!audit_proc_fail.passed);
+
+    // Caso 4: Valores não-numéricos/malformados não entram em pânico
+    let stdout_malformed = "Total de verificações: abc | Conformes: xyz | Avisos: NaN | Falhas: null\nÍndice de Conformidade Gosplan:   88%  ";
+    let malformed_audit = parse_quality_audit(stdout_malformed, true);
+    assert!(malformed_audit.passed);
+    assert_eq!(malformed_audit.total_checks, 0);
+    assert_eq!(malformed_audit.conforming, 0);
+    assert_eq!(malformed_audit.compliance_index, "88%");
+}
