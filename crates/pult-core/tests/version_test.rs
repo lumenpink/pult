@@ -1,4 +1,4 @@
-use pult_core::{canonical_version, short_version};
+use pult_core::{canonical_version, short_version, VERSION};
 
 #[test]
 fn test_canonical_version_is_valid_semver() {
@@ -8,6 +8,15 @@ fn test_canonical_version_is_valid_semver() {
         ver.starts_with("0.1.0"),
         "expected version to start with 0.1.0, got: {}",
         ver
+    );
+}
+
+#[test]
+fn test_cargo_pkg_version_matches_canonical_root_version() {
+    let canonical = canonical_version();
+    assert_eq!(
+        VERSION, canonical,
+        "env!(CARGO_PKG_VERSION) deve ser sincronizado com VERSION da raiz"
     );
 }
 
