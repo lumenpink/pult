@@ -2,7 +2,7 @@
 
 - **Ticket:** #36
 - **Norma:** GOST 1.1.0 (Perfil: `lumen.md`)
-- **Status:** Aprovado
+- **Status:** Implementado e Validado
 
 ## 1. Escopo e Motivação
 Garantir que todos os subcrates pertencentes ao workspace do Pult (`crates/pult-core` e `crates/pult-tui`) mantenham paridade e sincronização estrita de versão com o arquivo `VERSION` raiz do repositório, gerenciado de forma preditiva pelo CCCP.
@@ -15,3 +15,8 @@ Garantir que todos os subcrates pertencentes ao workspace do Pult (`crates/pult-
    - A compilação da crate `pult-tui` expõe sua versão via CLI com fidelidade ao `VERSION` corrente, eliminando discrepâncias onde versões estáticas antigas (ex.: `dev.1`) eram reportadas por ferramentas de detecção e pela Jornaleira.
 3. **Validação Automatizada:**
    - Um teste de integração deve verificar programaticamente que a versão lida de `VERSION` é idêntica à versão configurada nos manifestos do workspace.
+
+## 3. Conclusão e Resultados
+- Sincronização automatizada integrada com a nova capacidade do CCCP.
+- Teste unitário `test_cargo_pkg_version_matches_canonical_root_version` aprovado.
+- Quality Gate aprovado sem advertências (-D warnings).

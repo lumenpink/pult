@@ -1,6 +1,6 @@
 [package]
 name = "pult-core"
-version = "0.1.0-dev.243+20261101.47582ab"
+version = "0.1.0-dev.244+20261101.02da863"
 edition = "2021"
 license = "GPL-3.0-or-later"
 description = "Core domain logic, AST extractors, Ollama Scout client, and session persistence for Pult"
