@@ -878,7 +878,7 @@ dependencies = [
 
 [[package]]
 name = "pult-core"
-version = "0.1.0-dev.1"
+version = "0.1.0-dev.240+20261029.0d68603"
 dependencies = [
  "quote",
  "reqwest",
@@ -900,7 +900,7 @@ dependencies = [
 
 [[package]]
 name = "pult-tui"
-version = "0.1.0-dev.1"
+version = "0.1.0-dev.240+20261029.0d68603"
 dependencies = [
  "clap",
  "crossterm",
