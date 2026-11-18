@@ -1,6 +1,6 @@
 [package]
 name = "pult-tui"
-version = "0.1.0-dev.244+20261101.02da863"
+version = "0.1.0-dev.245+20261101.0c82c73"
 edition = "2021"
 license = "GPL-3.0-or-later"
 description = "Terminal user interface for Pult using Ratatui and Crossterm"
