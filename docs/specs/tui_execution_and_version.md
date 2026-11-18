@@ -43,8 +43,8 @@ Ao acionar o envio de uma instrução:
    - Adiciona `☭ [PULT] [3/4] Inicializando turno e persistência em disco...`
    - Registra o turno da usuária e prepara o turno do agente na sessão ativa.
 
-5. **Disparo do Agente Soberano (`AgyRunner`):**
-   - Adiciona `☭ [PULT] [4/4] Executando agente soberano (agy)...`
+5. **Disparo do Agente Autônomo (`AgyRunner`):**
+   - Adiciona `☭ [PULT] [4/4] Executando agente autônomo (agy)...`
    - O `AgyRunner` roda assincronamente transmitindo eventos por canal `mpsc::Receiver<AgyStreamEvent>`.
    - O loop principal da TUI recebe os eventos e anexa os blocos de texto ao viewport em tempo real.
    - Ao receber `AgyStreamEvent::Completed`, relata o código de término, atualiza o turno na sessão e redefine `is_busy = false`.

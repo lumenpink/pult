@@ -1,11 +1,11 @@
 # ☭ PULT (Пульт)
 
-Estação de trabalho TUI soberana para terminal (Rust), mediadora de contexto AST/Scout e guardiã do ciclo DD-TDD (GOST/CCCP) com a Antigravity CLI.
+Estação de trabalho TUI autônoma para terminal (Rust), mediadora de contexto AST/Scout e guardiã do ciclo DD-TDD (GOST/CCCP) com a Antigravity CLI mantida por [lumen.pink](https://lumen.pink).
 
 ## 📋 Conformidade GOST
 
 Este projeto adota a norma **[GOST](https://codeberg.org/lumenpink/gost)** (Gosplan Standard for Technical Software).
-- **Versão GOST:** `1.1.0`
+- **Versão GOST:** `2.1.0`
 - **Linguagens declaradas:** `rust`
 - **Licença:** `GPL-3.0-or-later`
 

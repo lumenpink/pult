@@ -5,7 +5,7 @@
 - **Status:** Aprovado
 
 ## 1. Escopo e Motivação
-Permitir que a estação de trabalho soberana Pult seja iniciada a partir de qualquer diretório apontando para qualquer projeto local no sistema, combinando flags e argumentos posicionais com inferência ergonômica idêntica ao `cccp ticket divan`.
+Permitir que a estação de trabalho autônoma Pult seja iniciada a partir de qualquer diretório apontando para qualquer projeto local no sistema, combinando flags e argumentos posicionais com inferência ergonômica idêntica ao `cccp ticket divan`.
 
 ## 2. Interface da Linha de Comando (CLI)
 - **Flag explícita:** `-r, --repo <DIR_OR_REPO>` (aliases: `-C`, `--dir`).

@@ -1,7 +1,7 @@
 # Especificação Técnica: GOST State Machine, Action Buttons & Phase 3 Guard
 
 ## 1. Visão Geral e Propósito
-A integração da máquina de estados do ciclo normativo **GOST DD-TDD** e de guardas atômicas diretamente na interface TUI do `pult` garante que nenhuma etapa seja burlada ou executada fora de conformidade com as 9 fases soberanas.
+A integração da máquina de estados do ciclo normativo **GOST DD-TDD** e de guardas atômicas diretamente na interface TUI do `pult` garante que nenhuma etapa seja burlada ou executada fora de conformidade com as 9 fases normativas.
 
 O operador tem controle tátil através de atalhos operacionais dedicados (`Ctrl+P`, `Ctrl+N`, `Ctrl+G`, `Ctrl+M`), enquanto o núcleo bloqueia ativamente infrações antes que os hooks do `cccp` precisem intervir.
 
@@ -24,7 +24,7 @@ A TUI rastreia a fase ativa através da enum `GostPhase` do `pult-core`:
   ```text
   docs(<scope>): <summary> (closes #<id>)
 
-  ### Crônica da Entrega Soberana (GOST DD-TDD)
+  ### Crônica da Entrega (GOST DD-TDD)
   - Ticket: #<id>
   - Branch: <branch>
   - Turnos Processados: <N>

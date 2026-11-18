@@ -59,8 +59,16 @@ fn test_mutation_version_string_trimming_and_format() {
 fn test_gost_v3_structure() {
     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let root = manifest_dir.parent().unwrap().parent().unwrap();
-    assert!(!root.join("GOSTVER").exists(), "GOSTVER legado deve ser purgado da raiz");
-    assert!(root.join(".gost/GOST.md").exists(), ".gost/GOST.md deve existir");
-    assert!(root.join(".gost/delivery.toml").exists(), ".gost/delivery.toml deve existir");
+    assert!(
+        !root.join("GOSTVER").exists(),
+        "GOSTVER legado deve ser purgado da raiz"
+    );
+    assert!(
+        root.join(".gost/GOST.md").exists(),
+        ".gost/GOST.md deve existir"
+    );
+    assert!(
+        root.join(".gost/delivery.toml").exists(),
+        ".gost/delivery.toml deve existir"
+    );
 }
-

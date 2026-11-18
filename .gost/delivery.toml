@@ -1,0 +1,7 @@
+# Manifesto declarativo de entrega contínua (CD)
+[binaries]
+target = "banca"
+
+[sites]
+target = "cloudflare-pages"
+dir = "site"

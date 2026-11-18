@@ -1,0 +1,13 @@
+{
+  "abstract": "Projeto pult governado conforme a norma técnica GOST v3.0.",
+  "schema_version": 1,
+  "site_type": "binary",
+  "slug": "pult",
+  "summary": "Módulo pult do ecossistema Gosplan",
+  "tagline": "Repositório pult",
+  "tags": [
+    "gost",
+    "tulipa"
+  ],
+  "title": "pult"
+}
