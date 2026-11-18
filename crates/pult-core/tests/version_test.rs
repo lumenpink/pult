@@ -54,3 +54,13 @@ fn test_mutation_version_string_trimming_and_format() {
     assert!(!short.is_empty(), "short_version must not be empty");
     assert_eq!(short, short.trim(), "short_version must be trimmed");
 }
+
+#[test]
+fn test_gost_v3_structure() {
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let root = manifest_dir.parent().unwrap().parent().unwrap();
+    assert!(!root.join("GOSTVER").exists(), "GOSTVER legado deve ser purgado da raiz");
+    assert!(root.join(".gost/GOST.md").exists(), ".gost/GOST.md deve existir");
+    assert!(root.join(".gost/delivery.toml").exists(), ".gost/delivery.toml deve existir");
+}
+
