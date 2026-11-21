@@ -75,10 +75,10 @@ fn test_mutation_ci_workflow_branches_and_secrets() {
     // Valida integridade do clone para CCCP
     assert!(content.contains("fetch-depth: 0"));
 
-    // Valida segredos do Cloudflare para publicação
-    assert!(content.contains("secrets.CLOUDFLARE_API_TOKEN"));
-    assert!(content.contains("secrets.CLOUDFLARE_ACCOUNT_ID"));
-    assert!(content.contains("npx wrangler deploy"));
+    // Valida publicação via Forgejo Generic Packages (orquestrada pelo Kombinat) e ausência de deploy direto
+    assert!(content.contains("cccp package upload"));
+    assert!(!content.contains("npx wrangler deploy"));
+    assert!(!content.contains("secrets.CLOUDFLARE_API_TOKEN"));
 }
 
 #[test]
