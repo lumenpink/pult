@@ -86,18 +86,18 @@ fn test_ci_workflow_multiarch_and_banca_publish() {
         "Deve compilar para Windows AMD64"
     );
 
-    // Upload R2 e Banca
+    // Publicação via Forgejo Generic Packages (orquestrada pelo Kombinat) e ausência de R2/Banca diretos
     assert!(
-        ci_content.contains("twolp-bucket/downloads/pult"),
-        "Deve publicar no storage twolp-bucket/downloads/pult"
+        ci_content.contains("cccp package upload"),
+        "Deve publicar artefatos via cccp package upload para consumo do Kombinat"
     );
     assert!(
-        ci_content.contains("rotate-downloads.py"),
-        "Deve acionar o script de rotação da Banca"
+        !ci_content.contains("twolp-bucket/downloads/pult"),
+        "Não deve publicar diretamente no R2 (CD centralizada no Kombinat)"
     );
     assert!(
-        ci_content.contains("site/downloads/pult"),
-        "Deve atualizar o manifesto pult na Banca"
+        !ci_content.contains("rotate-downloads.py"),
+        "Não deve acionar script legado rotate-downloads.py"
     );
 }
 
